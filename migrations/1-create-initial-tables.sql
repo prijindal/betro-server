@@ -3,15 +3,15 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE TABLE users (
     id uuid DEFAULT gen_random_uuid (),
     email VARCHAR NOT NULL,
-    master_hash VARCHAR,
+    master_hash VARCHAR UNIQUE NOT NULL,
     PRIMARY KEY (id)
 );
 
 CREATE TABLE access_tokens (
     id uuid DEFAULT gen_random_uuid (),
     user_id uuid NOT NULL,
-    access_token uuid NOT NULL,
-    device_id VARCHAR NOT NULL,
+    access_token_hash VARCHAR UNIQUE NOT NULL,
+    device_id VARCHAR UNIQUE NOT NULL,
     initial_device_display_name VARCHAR,
     created_at timestamptz DEFAULT NOW(),
     accessed_at timestamptz,
@@ -24,7 +24,7 @@ CREATE TABLE access_tokens (
 CREATE TABLE user_rsa_keys (
     id uuid DEFAULT gen_random_uuid (),
     user_id uuid NOT NULL,
-    public_key VARCHAR NOT NULL,
+    public_key VARCHAR UNIQUE NOT NULL,
     private_key VARCHAR NOT NULL,
     PRIMARY KEY (id),
     CONSTRAINT fk_user

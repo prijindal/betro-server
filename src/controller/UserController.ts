@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { v4 as uuidv4 } from "uuid";
 import { isEmpty } from "lodash";
+import jsonwebtoken from "jsonwebtoken";
 import { errorResponse } from "../util/responseHandler";
 import {
   isEmailAvailable,
@@ -12,6 +13,8 @@ import {
   checkUserCredentials,
   createAccessToken,
 } from "../service/LoginService";
+import { SECRET } from "../config";
+import { userEmail } from "../service/AccountService";
 
 export const availableUser = async (
   req: Request<null, null, null, { email: string }>,
@@ -68,16 +71,31 @@ export const loginUser = async (
       if (isEmpty(device_id)) {
         device_id = uuidv4();
       }
-      const access_token = await createAccessToken(
+      const { access_token_id, access_token } = await createAccessToken(
         user_id,
         device_id,
         req.body.initial_device_display_name
       );
-      // Create access token and send
-      res.status(200).send({ user_id, access_token, device_id });
+      try {
+        const token = jsonwebtoken.sign(
+          { user_id, id: access_token_id, key: access_token },
+          SECRET
+        );
+        // Create access token and send
+        res.status(200).send({ token, device_id });
+      } catch(e) {
+        res.status(502).send(errorResponse(502));
+        next(e);    
+      }
     }
   } catch (e) {
     res.status(503).send(errorResponse(503));
     next(e);
   }
+};
+
+export const whoAmi = async(req:Request,res:Response,next:NextFunction):Promise<void> => {
+  const user_id = res.locals.user_id;
+  const email = await userEmail(user_id);
+  res.status(200).send({user_id, email });
 };
