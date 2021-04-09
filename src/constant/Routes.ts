@@ -1,5 +1,5 @@
 const ROUTES = {
-  REGISTER: "/api/register"
-}
+  REGISTER: "/api/register",
+};
 
 export default ROUTES;

@@ -1,7 +1,7 @@
 /* /api/register */
 import { Router } from "express";
 import RegisterValidation from "../validation/RegisterValidation";
-import {availableUser,registerUser} from "../controller/UserController"
+import { availableUser, registerUser } from "../controller/UserController";
 import { validateRequest } from "../middleware/validateRequest";
 
 const router = Router();
@@ -13,11 +13,6 @@ router.get(
   availableUser
 );
 
-router.post(
-  "/",
-  RegisterValidation.register(),
-  validateRequest,
-  registerUser
-);
+router.post("/", RegisterValidation.register(), validateRequest, registerUser);
 
 export default router;
