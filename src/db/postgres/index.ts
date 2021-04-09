@@ -1,5 +1,5 @@
 import { Pool, Client } from "pg";
-import { POSTGRES_URI } from "../config";
+import { POSTGRES_URI } from "../../config";
 
 const postgres = new Pool({connectionString: POSTGRES_URI});
 

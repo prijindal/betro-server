@@ -4,6 +4,11 @@
 const ErrorData = {
   ERROR_STATUS_ARRAY: [
     {
+      status: 400,
+      message: "Bad request",
+      data: "Something wrong in your request"
+    },
+    {
       status: 401,
       message: "userId or privateKey is wrong.",
       data: "userId or privateKey is wrong."
@@ -87,6 +92,11 @@ const ErrorData = {
       status: 417,
       message: "Authentication error.",
       data: "You are not authorized to perform this action."
+    },
+    {
+      status: 429,
+      message: "Too many requests",
+      data: "Please try again after some time"
     },
     {
       status: 501,
