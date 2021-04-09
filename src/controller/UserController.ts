@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from "uuid";
 import { isEmpty } from "lodash";
 import { errorResponse } from "../util/responseHandler";
 import {
@@ -10,7 +10,7 @@ import {
 import {
   LoginBody,
   checkUserCredentials,
-  createAccessToken
+  createAccessToken,
 } from "../service/LoginService";
 
 export const availableUser = async (
@@ -56,18 +56,25 @@ export const loginUser = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const verifiedObject = await checkUserCredentials(req.body.email, req.body.master_hash);
-    if(verifiedObject.isValid == false) {
+    const verifiedObject = await checkUserCredentials(
+      req.body.email,
+      req.body.master_hash
+    );
+    if (verifiedObject.isValid == false) {
       res.status(403).send(errorResponse(403, "Invalid Credentials"));
     } else {
       const user_id = verifiedObject.user_id;
       let device_id = req.body.device_id;
-      if(isEmpty(device_id)) {
+      if (isEmpty(device_id)) {
         device_id = uuidv4();
-      }    
-      const access_token = await createAccessToken(user_id, device_id,req.body.initial_device_display_name);
+      }
+      const access_token = await createAccessToken(
+        user_id,
+        device_id,
+        req.body.initial_device_display_name
+      );
       // Create access token and send
-      res.status(200).send({user_id, access_token,device_id});
+      res.status(200).send({ user_id, access_token, device_id });
     }
   } catch (e) {
     res.status(503).send(errorResponse(503));
