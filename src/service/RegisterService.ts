@@ -11,7 +11,7 @@ export type RegisterBody =
       email: string;
       master_hash: string;
       inhibit_login: true;
-      devide_id: string;
+      device_id: string;
       initial_device_display_name: string;
     };
 

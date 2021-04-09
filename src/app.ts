@@ -5,6 +5,7 @@ import ROUTES from "./constant/Routes";
 
 import rateLimit from "./middleware/rateLimit";
 
+import loginRoutes from "./routes/loginRoutes";
 import registerRoutes from "./routes/registerRoutes";
 
 export async function initServer(): Promise<express.Express> {
@@ -17,6 +18,7 @@ export async function initServer(): Promise<express.Express> {
   app.use(cors());
   app.use(express.json());
 
+  app.use(ROUTES.LOGIN, loginRoutes);
   app.use(ROUTES.REGISTER, registerRoutes);
 
   return app;
