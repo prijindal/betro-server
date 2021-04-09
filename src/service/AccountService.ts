@@ -1,5 +1,5 @@
 import postgres from "../db/postgres";
-import {throttle} from "throttle-debounce";
+import { throttle } from "throttle-debounce";
 
 const userAccessedFn = async (access_token_id: string): Promise<void> => {
   const queryResult = await postgres.query(

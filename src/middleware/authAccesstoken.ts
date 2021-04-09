@@ -17,7 +17,7 @@ export const authAccesstoken = async (
   }
   const jwt = trim(authorization.split("Bearer")[1]);
   try {
-    const {user_id, access_token_id} = await parseJwt(jwt);
+    const { user_id, access_token_id } = await parseJwt(jwt);
     if (isEmpty(user_id)) {
       return res.status(401).send(errorResponse(401, "Invalid jwt token"));
     }

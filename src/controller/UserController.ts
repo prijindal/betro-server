@@ -43,7 +43,7 @@ export const registerUser = async (
     const queryResult = await isEmailAvailable(req.body.email);
     if (queryResult) {
       const response = await createUser(req.body);
-      if(!req.body.inhibit_login) {
+      if (!req.body.inhibit_login) {
         res.status(200).send(response);
       } else {
         const user_id = response.user_id;
@@ -52,7 +52,7 @@ export const registerUser = async (
           device_id = uuidv4();
         }
         let device_display_name = req.body.initial_device_display_name;
-        if(isEmpty(device_display_name)) {
+        if (isEmpty(device_display_name)) {
           device_display_name = req.headers["user-agent"];
         }
         const { access_token_id, access_token } = await createAccessToken(
@@ -100,7 +100,7 @@ export const loginUser = async (
         device_id = uuidv4();
       }
       let device_display_name = req.body.device_display_name;
-      if(isEmpty(device_display_name)) {
+      if (isEmpty(device_display_name)) {
         device_display_name = req.headers["user-agent"];
       }
       const { access_token_id, access_token } = await createAccessToken(
@@ -126,10 +126,7 @@ export const loginUser = async (
   }
 };
 
-export const whoAmi = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+export const whoAmi = async (req: Request, res: Response): Promise<void> => {
   const user_id = res.locals.user_id;
   const email = await userEmail(user_id);
   res.status(200).send({ user_id, email });

@@ -72,20 +72,22 @@ export const verifyAccessToken = async (
   return true;
 };
 
-export const parseJwt = async (jwt: string): Promise<{user_id: string, access_token_id: string}> => {
+export const parseJwt = async (
+  jwt: string
+): Promise<{ user_id: string; access_token_id: string }> => {
   const redisKeyUserId = `jwt_${jwt}_user_id`;
   const redisKeyTokenId = `jwt_${jwt}_token_id`;
   const storedUserId = await redis.get(redisKeyUserId);
   const storedTokenId = await redis.get(redisKeyTokenId);
   if (!isEmpty(storedUserId) && !isEmpty(storedTokenId)) {
-    return {user_id: storedUserId, access_token_id: storedTokenId};
+    return { user_id: storedUserId, access_token_id: storedTokenId };
   }
   const { user_id, id, key } = jsonwebtoken.verify(jwt, SECRET) as any;
   const isVerified = await verifyAccessToken(user_id, id, key);
   if (!isVerified) {
-    return {user_id: null, access_token_id: null};
+    return { user_id: null, access_token_id: null };
   }
   redis.set(redisKeyUserId, user_id, "ex", 600);
   redis.set(redisKeyTokenId, id, "ex", 600);
-  return {user_id, access_token_id: id};
+  return { user_id, access_token_id: id };
 };
