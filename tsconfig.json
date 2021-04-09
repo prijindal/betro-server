@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "incremental": true,
+    "module": "CommonJS",
+    "allowJs": true,
+    "esModuleInterop": true,
+    "rootDir": "src",
+    "allowSyntheticDefaultImports": true,
+    "target": "ESNext",
+    "skipLibCheck": true,
+    "noImplicitAny": true,
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "outDir": "dist",
+    "baseUrl": ".",
+    "types": []
+  },
+  "include": ["src", "node_modules/@types/jest"],
+  "exclude": ["test/models", "dist"]
+}
