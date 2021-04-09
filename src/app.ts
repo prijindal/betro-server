@@ -3,7 +3,7 @@ import cors from "cors";
 import postgres from "./db/postgres";
 import ROUTES from "./constant/Routes";
 
-import {userLimiter, loginRateLimiter} from "./middleware/rateLimit";
+import { userLimiter, loginRateLimiter } from "./middleware/rateLimit";
 
 import loginRoutes from "./routes/loginRoutes";
 import registerRoutes from "./routes/registerRoutes";

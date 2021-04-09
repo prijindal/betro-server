@@ -7,7 +7,7 @@ import { errorResponse } from "../util/responseHandler";
 export const userLimiter = rateLimit({
   store: new RedisStore({
     client: redis,
-    prefix: "user_limiter_"
+    prefix: "user_limiter_",
   }),
   windowMs: 5 * 60 * 1000,
   max: 100,
@@ -20,7 +20,7 @@ export const userLimiter = rateLimit({
 export const loginRateLimiter = rateLimit({
   store: new RedisStore({
     client: redis,
-    prefix: "login_limiter_"
+    prefix: "login_limiter_",
   }),
   windowMs: 5 * 60 * 1000,
   max: 15,

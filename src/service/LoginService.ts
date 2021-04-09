@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from "uuid";
 import jsonwebtoken from "jsonwebtoken";
 import postgres from "../db/postgres";
 import redis from "../db/redis";
-import {SECRET} from "../config";
+import { SECRET } from "../config";
 
 import { verifyServerHash, generateServerHash } from "../util/crypto";
 import { isEmpty } from "lodash";
@@ -72,17 +72,15 @@ export const verifyAccessToken = async (
   return true;
 };
 
-export const parseJwt = async (
-  jwt: string
-): Promise<string> => {
+export const parseJwt = async (jwt: string): Promise<string> => {
   const redisKey = `jwt_${jwt}`;
   const storedUserId = await redis.get(redisKey);
-  if(!isEmpty(storedUserId)) {
+  if (!isEmpty(storedUserId)) {
     return storedUserId;
   }
-  const {user_id, id, key} = jsonwebtoken.verify(jwt, SECRET) as any;
+  const { user_id, id, key } = jsonwebtoken.verify(jwt, SECRET) as any;
   const isVerified = await verifyAccessToken(user_id, id, key);
-  if(!isVerified) {
+  if (!isVerified) {
     return null;
   }
   redis.set(redisKey, user_id, "ex", 600);

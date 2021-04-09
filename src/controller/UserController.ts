@@ -83,9 +83,9 @@ export const loginUser = async (
         );
         // Create access token and send
         res.status(200).send({ token, device_id });
-      } catch(e) {
+      } catch (e) {
         res.status(502).send(errorResponse(502));
-        next(e);    
+        next(e);
       }
     }
   } catch (e) {
@@ -94,8 +94,12 @@ export const loginUser = async (
   }
 };
 
-export const whoAmi = async(req:Request,res:Response,next:NextFunction):Promise<void> => {
+export const whoAmi = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   const user_id = res.locals.user_id;
   const email = await userEmail(user_id);
-  res.status(200).send({user_id, email });
+  res.status(200).send({ user_id, email });
 };

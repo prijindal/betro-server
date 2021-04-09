@@ -1,6 +1,6 @@
 /* /api/account */
 import { Router } from "express";
-import {authAccesstoken} from "../middleware/authAccesstoken";
+import { authAccesstoken } from "../middleware/authAccesstoken";
 import { whoAmi } from "../controller/UserController";
 
 const router = Router();
