@@ -7,10 +7,10 @@ import {
 } from "../service/RegisterService";
 
 export const availableUser = async (
-  req: Request<any, any, any, { email: string }>,
+  req: Request<null, null, null, { email: string }>,
   res: Response,
   next: NextFunction
-) => {
+): Promise<void> => {
   try {
     const queryResult = await isEmailAvailable(req.query.email);
     if (queryResult) {
@@ -25,10 +25,10 @@ export const availableUser = async (
 };
 
 export const registerUser = async (
-  req: Request<any, any, RegisterBody>,
+  req: Request<null, null, RegisterBody>,
   res: Response,
   next: NextFunction
-) => {
+): Promise<void> => {
   try {
     const queryResult = await isEmailAvailable(req.body.email);
     if (queryResult) {

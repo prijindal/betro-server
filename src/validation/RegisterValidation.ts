@@ -1,11 +1,11 @@
-import { body, query } from "express-validator";
+import { body, query, ValidationChain } from "express-validator";
 
 const RegisterValidation = {
-  available: () => [
+  available: (): Array<ValidationChain> => [
     query("email", "email is required!").not().isEmpty().isEmail(),
   ],
 
-  register: () => {
+  register: (): Array<ValidationChain> => {
     return [
       body("email", "email is required!").not().isEmpty().isEmail(),
       body("master_hash", "master hash is required").not().isEmpty(),

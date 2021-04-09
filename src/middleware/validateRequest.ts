@@ -6,7 +6,7 @@ export const validateRequest = (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): Response => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     const validationErrors = errors.array({ onlyFirstError: true });

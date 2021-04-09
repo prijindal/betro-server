@@ -1,7 +1,13 @@
 // 40X - Client Side Error
 // 50X - Server Side Error
 
-const ErrorData = {
+export type ErrorDataType = {
+  status: number;
+  message: string;
+  data: string;
+};
+
+const ErrorData: { ERROR_STATUS_ARRAY: Array<ErrorDataType> } = {
   ERROR_STATUS_ARRAY: [
     {
       status: 400,

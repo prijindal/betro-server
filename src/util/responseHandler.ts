@@ -1,5 +1,5 @@
 import { isEmpty } from "lodash";
-import ErrorData from "../constant/ErrorData";
+import ErrorData, { ErrorDataType } from "../constant/ErrorData";
 
 const findErrorMessage = (status: number) => {
   return (
@@ -11,7 +11,10 @@ const findErrorMessage = (status: number) => {
   );
 };
 
-export const errorResponse = (statusCode: number, message?: string) => {
+export const errorResponse = (
+  statusCode: number,
+  message?: string
+): ErrorDataType => {
   const errorMessage = findErrorMessage(statusCode);
   if (!isEmpty(message)) {
     errorMessage.data = message;
