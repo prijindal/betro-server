@@ -20,7 +20,7 @@ export const registerUser = async (req: Request<any, any, RegisterBody>, res:Res
   try {
     const queryResult = await isEmailAvailable(req.body.email);
     if(queryResult) {
-      const response = createUser(req.body);
+      const response = await createUser(req.body);
       res.status(200).send(response);
     } else {
       res.status(400).send(errorResponse(400, "Email is not available"));

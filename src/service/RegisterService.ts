@@ -20,11 +20,17 @@ export const isEmailAvailable = async (email:string):Promise<boolean> => {
 
 export const createUser = async (body:RegisterBody):Promise<
   {
+    user_id: string;
     access_token?: string;
     device_id?:string;
   }
 > => {
   const hash = generateServerHash(body.master_hash);
-  const inserted = await postgres.query("INSERT INTO users(email,master_hash) VALUES ($1,$2)", [body.email, hash])
-  return {};
+  const inserted = await postgres.query("INSERT INTO users(email,master_hash) VALUES ($1,$2) RETURNING *", [body.email, hash])
+  if(inserted.rowCount == 0) {
+    throw new Error();
+  }
+  return {
+    user_id: inserted.rows[0].id,
+  };
 }
