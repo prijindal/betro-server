@@ -27,8 +27,6 @@ export const createUser = async (
   body: RegisterBody
 ): Promise<{
   user_id: string;
-  access_token?: string;
-  device_id?: string;
 }> => {
   const hash = generateServerHash(body.master_hash);
   const inserted = await postgres.query(

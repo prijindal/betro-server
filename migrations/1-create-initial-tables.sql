@@ -12,7 +12,7 @@ CREATE TABLE access_tokens (
     user_id uuid NOT NULL,
     access_token_hash VARCHAR UNIQUE NOT NULL,
     device_id VARCHAR UNIQUE NOT NULL,
-    initial_device_display_name VARCHAR,
+    device_display_name VARCHAR,
     created_at timestamptz DEFAULT NOW(),
     accessed_at timestamptz,
     PRIMARY KEY (id),

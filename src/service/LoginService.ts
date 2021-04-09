@@ -11,7 +11,7 @@ export type LoginBody = {
   email: string;
   master_hash: string;
   device_id: string;
-  initial_device_display_name: string;
+  device_display_name: string;
 };
 
 export const checkUserCredentials = async (
@@ -35,15 +35,15 @@ export const checkUserCredentials = async (
 export const createAccessToken = async (
   user_id: string,
   device_id: string,
-  initial_device_display_name?: string
+  device_display_name?: string
 ): Promise<{ access_token_id: string; access_token: string }> => {
   const access_token = uuidv4();
   const access_token_hash = generateServerHash(access_token);
   const queryResult = await postgres.query(
-    `INSERT INTO access_tokens(user_id, access_token_hash,device_id,initial_device_display_name)
+    `INSERT INTO access_tokens(user_id, access_token_hash,device_id,device_display_name)
     VALUES($1,$2,$3,$4) RETURNING *
     `,
-    [user_id, access_token_hash, device_id, initial_device_display_name]
+    [user_id, access_token_hash, device_id, device_display_name]
   );
   if (queryResult.rowCount == 0) {
     throw new Error();
@@ -72,17 +72,20 @@ export const verifyAccessToken = async (
   return true;
 };
 
-export const parseJwt = async (jwt: string): Promise<string> => {
-  const redisKey = `jwt_${jwt}`;
-  const storedUserId = await redis.get(redisKey);
-  if (!isEmpty(storedUserId)) {
-    return storedUserId;
+export const parseJwt = async (jwt: string): Promise<{user_id: string, access_token_id: string}> => {
+  const redisKeyUserId = `jwt_${jwt}_user_id`;
+  const redisKeyTokenId = `jwt_${jwt}_token_id`;
+  const storedUserId = await redis.get(redisKeyUserId);
+  const storedTokenId = await redis.get(redisKeyTokenId);
+  if (!isEmpty(storedUserId) && !isEmpty(storedTokenId)) {
+    return {user_id: storedUserId, access_token_id: storedTokenId};
   }
   const { user_id, id, key } = jsonwebtoken.verify(jwt, SECRET) as any;
   const isVerified = await verifyAccessToken(user_id, id, key);
   if (!isVerified) {
-    return null;
+    return {user_id: null, access_token_id: null};
   }
-  redis.set(redisKey, user_id, "ex", 600);
-  return user_id;
+  redis.set(redisKeyUserId, user_id, "ex", 600);
+  redis.set(redisKeyTokenId, id, "ex", 600);
+  return {user_id, access_token_id: id};
 };

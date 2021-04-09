@@ -43,7 +43,35 @@ export const registerUser = async (
     const queryResult = await isEmailAvailable(req.body.email);
     if (queryResult) {
       const response = await createUser(req.body);
-      res.status(200).send(response);
+      if(!req.body.inhibit_login) {
+        res.status(200).send(response);
+      } else {
+        const user_id = response.user_id;
+        let device_id = req.body.device_id;
+        if (isEmpty(device_id)) {
+          device_id = uuidv4();
+        }
+        let device_display_name = req.body.initial_device_display_name;
+        if(isEmpty(device_display_name)) {
+          device_display_name = req.headers["user-agent"];
+        }
+        const { access_token_id, access_token } = await createAccessToken(
+          user_id,
+          device_id,
+          device_display_name
+        );
+        try {
+          const token = jsonwebtoken.sign(
+            { user_id, id: access_token_id, key: access_token },
+            SECRET
+          );
+          // Create access token and send
+          res.status(200).send({ token, device_id });
+        } catch (e) {
+          res.status(502).send(errorResponse(502));
+          next(e);
+        }
+      }
     } else {
       res.status(400).send(errorResponse(400, "Email is not available"));
     }
@@ -71,10 +99,14 @@ export const loginUser = async (
       if (isEmpty(device_id)) {
         device_id = uuidv4();
       }
+      let device_display_name = req.body.device_display_name;
+      if(isEmpty(device_display_name)) {
+        device_display_name = req.headers["user-agent"];
+      }
       const { access_token_id, access_token } = await createAccessToken(
         user_id,
         device_id,
-        req.body.initial_device_display_name
+        device_display_name
       );
       try {
         const token = jsonwebtoken.sign(
@@ -96,8 +128,7 @@ export const loginUser = async (
 
 export const whoAmi = async (
   req: Request,
-  res: Response,
-  next: NextFunction
+  res: Response
 ): Promise<void> => {
   const user_id = res.locals.user_id;
   const email = await userEmail(user_id);
