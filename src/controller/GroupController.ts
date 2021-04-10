@@ -1,15 +1,15 @@
 import { Request, Response } from "express";
-import { createSymKey, getSymKeys } from "../service/KeyService";
-import { fetchUserGroups, createGroup } from "../service/GroupService";
+import { createSymKey, deleteSymKey, getSymKeys } from "../service/KeyService";
+import {
+  fetchUserGroups,
+  fetchUserGroup,
+  deleteUserGroup,
+  createGroup,
+} from "../service/GroupService";
 import { errorResponse } from "../util/responseHandler";
-import { ErrorDataType } from "src/constant/ErrorData";
-
-interface GroupResponse {
-  id: string;
-  sym_key: string;
-  name: string;
-  is_default: string;
-}
+import { ErrorDataType } from "../constant/ErrorData";
+import { GroupResponse } from "../interfaces/responses/GroupResponse";
+import { GroupCreateRequest } from "../interfaces/requests/GroupCreateRequest";
 
 export const getGroups = async (
   req: Request,
@@ -35,12 +35,6 @@ export const getGroups = async (
   }
 };
 
-interface GroupCreateRequest {
-  sym_key: string;
-  name: string;
-  is_default: boolean;
-}
-
 export const postGroup = async (
   req: Request<null, null, GroupCreateRequest>,
   res: Response<GroupResponse | ErrorDataType>
@@ -62,7 +56,29 @@ export const postGroup = async (
       is_default: group.is_default,
     });
   } catch (e) {
-    console.error(e);
+    res.status(503).send(errorResponse(503));
+  }
+};
+
+export const deleteGroup = async (
+  req: Request<{ id: string }>,
+  res: Response<{ deleted: boolean } | ErrorDataType>
+): Promise<void> => {
+  const user_id = res.locals.user_id;
+  try {
+    const group = await fetchUserGroup(user_id, req.params.id);
+    if (group == null) {
+      res.status(404).send(errorResponse(404, "Group not found"));
+    } else {
+      const isGroupDeleted = await deleteUserGroup(user_id, group.id);
+      const isKeyDeleted = await deleteSymKey(user_id, group.key_id);
+      if (!isKeyDeleted || !isGroupDeleted) {
+        res.status(500).send(errorResponse(500));
+      } else {
+        res.status(200).send({ deleted: true });
+      }
+    }
+  } catch (e) {
     res.status(503).send(errorResponse(503));
   }
 };

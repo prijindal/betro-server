@@ -12,6 +12,7 @@ import {
 } from "betro-js-lib";
 import { initServer } from "../src/app";
 import postgres from "../src/db/postgres";
+import { GroupResponse } from "../src/interfaces/responses/GroupResponse";
 
 interface GeneratedUser {
   credentials: {
@@ -22,6 +23,7 @@ interface GeneratedUser {
   encryption_key: string;
   encryption_mac: string;
   keys: { [k: string]: string };
+  groups?: Array<GroupResponse>;
 }
 
 const headers = {
@@ -181,6 +183,21 @@ describe("User functions", () => {
             users[userIndex].keys["symKey"]
           );
         }
+        users[userIndex].groups = response.body;
+      }
+    }
+  });
+  it("Deletes group", async () => {
+    for (const email in tokenMap) {
+      if (Object.prototype.hasOwnProperty.call(tokenMap, email)) {
+        const token = tokenMap[email];
+        const userIndex = users.findIndex((a) => a.credentials.email == email);
+        expect(users[userIndex].groups.length).toEqual(1);
+        const response = await request(app)
+          .delete(`/api/groups/${users[userIndex].groups[0].id}`)
+          .set({ ...headers, Authorization: `Bearer ${token}` });
+        expect(response.status).toEqual(200);
+        expect(response.body.deleted).toEqual(true);
       }
     }
   });

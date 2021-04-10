@@ -27,3 +27,14 @@ export const getSymKeys = async (
   });
   return keyMap;
 };
+
+export const deleteSymKey = async (
+  user_id: string,
+  key_id: string
+): Promise<boolean> => {
+  const queryResult = await postgres.query(
+    "DELETE FROM user_sym_keys WHERE user_id = $1 AND id=$2",
+    [user_id, key_id]
+  );
+  return queryResult.rowCount == 1;
+};
