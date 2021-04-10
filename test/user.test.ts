@@ -2,12 +2,26 @@ import { Express } from "express";
 import { includes } from "lodash";
 import faker from "faker";
 import request from "supertest";
+import {
+  getMasterKey,
+  getMasterHash,
+  getEncryptionKey,
+  generateSymKey,
+  aesEncrypt,
+  aesDecrypt,
+} from "betro-js-lib";
 import { initServer } from "../src/app";
 import postgres from "../src/db/postgres";
 
 interface GeneratedUser {
-  email: string;
-  master_hash: string;
+  credentials: {
+    email: string;
+    master_hash: string;
+  };
+  password: string;
+  encryption_key: string;
+  encryption_mac: string;
+  keys: { [k: string]: string };
 }
 
 const headers = {
@@ -20,15 +34,25 @@ const generateUsers = (n: number = 2): Array<GeneratedUser> => {
     let email = faker.internet.email();
     while (
       includes(
-        users.map((a) => a.email),
+        users.map((a) => a.credentials.email),
         email
       )
     ) {
       email = faker.internet.email();
     }
+    const password = faker.internet.password();
+    const masterKey = getMasterKey(email, password);
+    const master_hash = getMasterHash(masterKey, password);
+    const { encryption_key, encryption_mac } = getEncryptionKey(masterKey);
     users.push({
-      email: email,
-      master_hash: faker.internet.password(),
+      credentials: {
+        email: email,
+        master_hash: master_hash,
+      },
+      password,
+      encryption_key,
+      encryption_mac,
+      keys: {},
     });
   }
   return users;
@@ -37,7 +61,7 @@ const generateUsers = (n: number = 2): Array<GeneratedUser> => {
 const deleteUser = async (user: GeneratedUser): Promise<boolean> => {
   const queryResponse = await postgres.query(
     "DELETE FROM users WHERE email = $1",
-    [user.email]
+    [user.credentials.email]
   );
   return queryResponse.rowCount == 1;
 };
@@ -53,7 +77,7 @@ describe("User functions", () => {
   it("Check availability", async () => {
     for await (const user of users) {
       const response = await request(app)
-        .get(`/api/register/available?email=${user.email}`)
+        .get(`/api/register/available?email=${user.credentials.email}`)
         .set(headers);
       expect(response.status).toEqual(200);
       expect(response.body.available).toEqual(true);
@@ -64,7 +88,7 @@ describe("User functions", () => {
       const response = await request(app)
         .post("/api/register")
         .set(headers)
-        .send(JSON.stringify(user));
+        .send(JSON.stringify(user.credentials));
       expect(response.status).toEqual(200);
       expect(response.body.user_id).toBeTruthy();
     }
@@ -74,10 +98,10 @@ describe("User functions", () => {
       const response = await request(app)
         .post("/api/login")
         .set(headers)
-        .send(JSON.stringify(user));
+        .send(JSON.stringify(user.credentials));
       expect(response.status).toEqual(200);
       expect(response.body.device_id).toBeTruthy();
-      tokenMap[user.email] = response.body.token;
+      tokenMap[user.credentials.email] = response.body.token;
     }
   });
   it(
@@ -112,11 +136,20 @@ describe("User functions", () => {
     for (const email in tokenMap) {
       if (Object.prototype.hasOwnProperty.call(tokenMap, email)) {
         const token = tokenMap[email];
+        const symKey = generateSymKey();
+        const userIndex = users.findIndex((a) => a.credentials.email == email);
+        expect(users[userIndex]).toBeTruthy();
+        const encryptedSymKey = aesEncrypt(
+          users[userIndex].encryption_key,
+          users[userIndex].encryption_mac,
+          Buffer.from(symKey, "base64")
+        );
+        users[userIndex].keys["symKey"] = symKey;
         const response = await request(app)
           .post("/api/groups")
           .send({
             name: "Followers",
-            sym_key: "TEMP_KEY",
+            sym_key: encryptedSymKey,
             is_default: true,
           })
           .set({ ...headers, Authorization: `Bearer ${token}` });
@@ -134,6 +167,20 @@ describe("User functions", () => {
           .set({ ...headers, Authorization: `Bearer ${token}` });
         expect(response.status).toEqual(200);
         expect(response.body.length).toEqual(1);
+        const userIndex = users.findIndex((a) => a.credentials.email == email);
+        expect(users[userIndex].keys["symKey"]).toBeTruthy();
+        const encryptedSymKey = response.body[0].sym_key;
+        const symKeyData = aesDecrypt(
+          users[userIndex].encryption_key,
+          users[userIndex].encryption_mac,
+          encryptedSymKey
+        );
+        expect(symKeyData.isVerified).toEqual(true);
+        if (symKeyData.isVerified) {
+          expect(symKeyData.data.toString("base64")).toEqual(
+            users[userIndex].keys["symKey"]
+          );
+        }
       }
     }
   });
