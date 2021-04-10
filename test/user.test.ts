@@ -42,16 +42,6 @@ const deleteUser = async (user: GeneratedUser): Promise<boolean> => {
   return queryResponse.rowCount == 1;
 };
 
-const whoAmi = async (
-  app: Express,
-  token: string
-): Promise<{ user_id: string; email: string }> => {
-  const response = await request(app)
-    .get("/api/account/whoami")
-    .set({ ...headers, Authorization: `Bearer ${token}` });
-  return response.body;
-};
-
 describe("User functions", () => {
   let users: Array<GeneratedUser> = [];
   const tokenMap: { [email: string]: string } = {};
@@ -106,9 +96,50 @@ describe("User functions", () => {
     },
     10 * 1000
   );
+  it("Fetches user groups", async () => {
+    for (const email in tokenMap) {
+      if (Object.prototype.hasOwnProperty.call(tokenMap, email)) {
+        const token = tokenMap[email];
+        const response = await request(app)
+          .get("/api/groups")
+          .set({ ...headers, Authorization: `Bearer ${token}` });
+        expect(response.status).toEqual(200);
+        expect(response.body.length).toEqual(0);
+      }
+    }
+  });
+  it("Creates user group", async () => {
+    for (const email in tokenMap) {
+      if (Object.prototype.hasOwnProperty.call(tokenMap, email)) {
+        const token = tokenMap[email];
+        const response = await request(app)
+          .post("/api/groups")
+          .send({
+            name: "Followers",
+            sym_key: "TEMP_KEY",
+            is_default: true,
+          })
+          .set({ ...headers, Authorization: `Bearer ${token}` });
+        expect(response.status).toEqual(200);
+        expect(response.body.id).toBeTruthy();
+      }
+    }
+  });
+  it("Verifies groups are created", async () => {
+    for (const email in tokenMap) {
+      if (Object.prototype.hasOwnProperty.call(tokenMap, email)) {
+        const token = tokenMap[email];
+        const response = await request(app)
+          .get("/api/groups")
+          .set({ ...headers, Authorization: `Bearer ${token}` });
+        expect(response.status).toEqual(200);
+        expect(response.body.length).toEqual(1);
+      }
+    }
+  });
   afterAll(async () => {
-    // for await (const user of users) {
-    //   await deleteUser(user);
-    // }
+    for await (const user of users) {
+      await deleteUser(user);
+    }
   });
 });

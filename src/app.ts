@@ -3,11 +3,12 @@ import cors from "cors";
 import postgres from "./db/postgres";
 import ROUTES from "./constant/Routes";
 
-import { userLimiter, loginRateLimiter } from "./middleware/rateLimit";
+import { userRateLimiter, loginRateLimiter } from "./middleware/rateLimit";
 
 import loginRoutes from "./routes/loginRoutes";
 import registerRoutes from "./routes/registerRoutes";
 import accountRoutes from "./routes/accountRoutes";
+import groupRoutes from "./routes/groupRoutes";
 
 export async function initServer(): Promise<express.Express> {
   const app = express();
@@ -20,7 +21,8 @@ export async function initServer(): Promise<express.Express> {
 
   app.use(ROUTES.LOGIN, loginRateLimiter, loginRoutes);
   app.use(ROUTES.REGISTER, loginRateLimiter, registerRoutes);
-  app.use(ROUTES.ACCOUNT, userLimiter, accountRoutes);
+  app.use(ROUTES.ACCOUNT, userRateLimiter, accountRoutes);
+  app.use(ROUTES.GROUPS, userRateLimiter, groupRoutes);
 
   return app;
 }

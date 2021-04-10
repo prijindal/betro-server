@@ -4,7 +4,7 @@ import RedisStore from "rate-limit-redis";
 import redis from "../db/redis";
 import { errorResponse } from "../util/responseHandler";
 
-export const userLimiter = rateLimit({
+export const userRateLimiter = rateLimit({
   store: new RedisStore({
     client: redis,
     prefix: "user_limiter_",
