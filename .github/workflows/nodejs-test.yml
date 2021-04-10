@@ -50,13 +50,13 @@ jobs:
     - name: Clean up Postgres
       run: npm run db:clean
       env:
-        POSTGRES_URI: postgres://postgres:postgres@postgres:5432/postgres
+        POSTGRES_URI: postgres://postgres:postgres@localhost:5432/postgres
     - name: Run migrate Postgres
       run: npm run db:migrate
       env:
-        POSTGRES_URI: postgres://postgres:postgres@postgres:5432/postgres
+        POSTGRES_URI: postgres://postgres:postgres@localhost:5432/postgres
     - name: Nodejs Testing
       run: npm run test
       env:
-        POSTGRES_URI: postgres://postgres:postgres@postgres:5432/postgres
+        POSTGRES_URI: postgres://postgres:postgres@localhost:5432/postgres
         REDIS_URI: redis://redis:6379
