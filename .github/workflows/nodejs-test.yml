@@ -23,6 +23,9 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+        ports:
+          # Maps port 6379 on service container to the host
+          - 6379:6379
       postgres:
         # Docker Hub image
         image: postgres
@@ -35,6 +38,9 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+        ports:
+          # Maps tcp port 5432 on service container to the host
+          - 5432:5432
 
     strategy:
       matrix:
@@ -59,4 +65,4 @@ jobs:
       run: npm run test
       env:
         POSTGRES_URI: postgres://postgres:postgres@localhost:5432/postgres
-        REDIS_URI: redis://redis:6379
+        REDIS_URI: redis://localhost:6379
