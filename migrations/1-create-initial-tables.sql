@@ -19,6 +19,7 @@ CREATE TABLE access_tokens (
     CONSTRAINT fk_user
       FOREIGN KEY(user_id) 
 	  REFERENCES users(id)
+    ON DELETE CASCADE
 );
 
 CREATE TABLE user_rsa_keys (
@@ -30,6 +31,7 @@ CREATE TABLE user_rsa_keys (
     CONSTRAINT fk_user
       FOREIGN KEY(user_id) 
 	  REFERENCES users(id)
+    ON DELETE CASCADE
 );
 
 CREATE TABLE user_sym_keys (
@@ -40,4 +42,65 @@ CREATE TABLE user_sym_keys (
     CONSTRAINT fk_user
       FOREIGN KEY(user_id) 
 	  REFERENCES users(id)
+    ON DELETE CASCADE
+);
+
+CREATE TABLE group_policies (
+    id uuid DEFAULT gen_random_uuid (),
+    user_id uuid NOT NULL,
+    key_id uuid NOT NULL,
+    name VARCHAR NOT NULL,
+    is_default BOOLEAN DEFAULT FALSE,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_user
+      FOREIGN KEY(user_id) 
+	  REFERENCES users(id)
+    ON DELETE CASCADE,
+    CONSTRAINT fk_sym_key
+      FOREIGN KEY(key_id)
+	  REFERENCES user_sym_keys(id)
+    ON DELETE CASCADE
+);
+
+CREATE TABLE group_user_approvals (
+    id uuid DEFAULT gen_random_uuid (),
+    user_id uuid NOT NULL,
+    group_id uuid NOT NULL,
+    key_id uuid NOT NULL,
+    is_approved BOOLEAN DEFAULT FALSE,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_user
+      FOREIGN KEY(user_id) 
+	  REFERENCES users(id)
+    ON DELETE CASCADE,
+    CONSTRAINT fk_group
+      FOREIGN KEY(group_id)
+	  REFERENCES group_policies(id)
+    ON DELETE CASCADE,
+    CONSTRAINT fk_rsa_key
+      FOREIGN KEY(key_id)
+	  REFERENCES user_rsa_keys(id)
+    ON DELETE CASCADE
+);
+
+CREATE TABLE posts (
+    id uuid DEFAULT gen_random_uuid (),
+    user_id uuid NOT NULL,
+    group_id uuid NOT NULL,
+    key_id uuid NOT NULL,
+    content VARCHAR NOT NULL,
+    created_at timestamptz DEFAULT NOW(),
+    PRIMARY KEY (id),
+    CONSTRAINT fk_user
+      FOREIGN KEY(user_id) 
+	  REFERENCES users(id)
+    ON DELETE CASCADE,
+    CONSTRAINT fk_group
+      FOREIGN KEY(group_id)
+	  REFERENCES group_policies(id)
+    ON DELETE CASCADE,
+    CONSTRAINT fk_sym_key
+      FOREIGN KEY(key_id)
+	  REFERENCES user_rsa_keys(id)
+    ON DELETE CASCADE
 );

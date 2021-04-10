@@ -11,6 +11,7 @@ export const authAccesstoken = async (
 ): Promise<Response> => {
   const authorization = req.headers.authorization;
   if (!authorization.startsWith("Bearer")) {
+    next("Invalid jwt token");
     return res
       .status(401)
       .send(errorResponse(401, "Invalid Authorization Header"));
@@ -19,11 +20,13 @@ export const authAccesstoken = async (
   try {
     const { user_id, access_token_id } = await parseJwt(jwt);
     if (isEmpty(user_id)) {
+      next("Invalid jwt token");
       return res.status(401).send(errorResponse(401, "Invalid jwt token"));
     }
     res.locals.user_id = user_id;
     userAccessed(access_token_id);
   } catch (e) {
+    next("Invalid jwt token");
     return res.status(401).send(errorResponse(401, "Invalid jwt token"));
   } finally {
     next();
