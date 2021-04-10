@@ -1,14 +1,14 @@
 import pool from "./index";
 
 const cleanAllTables = async () => {
-  await pool.query("DROP TABLE posts;");
-  await pool.query("DROP TABLE group_user_approvals;");
-  await pool.query("DROP TABLE group_policies;");
-  await pool.query("DROP TABLE user_sym_keys;");
-  await pool.query("DROP TABLE user_rsa_keys;");
-  await pool.query("DROP TABLE access_tokens;");
-  await pool.query("DROP TABLE users;");
-  await pool.query("DROP TABLE migrations;");
+  await pool.query("DROP TABLE IF EXISTS posts;");
+  await pool.query("DROP TABLE IF EXISTS group_user_approvals;");
+  await pool.query("DROP TABLE IF EXISTS group_policies;");
+  await pool.query("DROP TABLE IF EXISTS user_sym_keys;");
+  await pool.query("DROP TABLE IF EXISTS user_rsa_keys;");
+  await pool.query("DROP TABLE IF EXISTS access_tokens;");
+  await pool.query("DROP TABLE IF EXISTS users;");
+  await pool.query("DROP TABLE IF EXISTS migrations;");
   process.exit();
 };
 
