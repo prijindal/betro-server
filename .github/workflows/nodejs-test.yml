@@ -47,10 +47,12 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
     - run: npm ci
-    - name: Setup up Postgres
-      run: 
-        - npm run db:clean
-        - npm run db:migrate
+    - name: Clean up Postgres
+      run: npm run db:clean
+      env:
+        POSTGRES_URI: postgres://postgres:postgres@postgres:5432/postgres
+    - name: Run migrate Postgres
+      run: npm run db:migrate
       env:
         POSTGRES_URI: postgres://postgres:postgres@postgres:5432/postgres
     - name: Nodejs Testing
