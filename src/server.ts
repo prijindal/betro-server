@@ -1,6 +1,6 @@
 import errorHandler from "errorhandler";
 
-import { initServer } from "./app";
+import { initServer } from "../src/app";
 
 /**
  * Error Handler. Provides full stack - remove for production

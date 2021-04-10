@@ -66,3 +66,6 @@ jobs:
       env:
         POSTGRES_URI: postgres://postgres:postgres@localhost:5432/postgres
         REDIS_URI: redis://localhost:6379
+    - uses: codecov/codecov-action@v1
+      with:
+        env_vars: NODE

@@ -1,4 +1,4 @@
-import pool from "./index";
+import pool from "../src/db/postgres";
 
 const cleanAllTables = async () => {
   await pool.query("DROP TABLE IF EXISTS posts;");
