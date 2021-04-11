@@ -30,7 +30,7 @@ const headers = {
   "Content-Type": "application/json",
 };
 
-const generateUsers = (n: number = 2): Array<GeneratedUser> => {
+const generateUsers = async (n: number = 2): Promise<Array<GeneratedUser>> => {
   const users: Array<GeneratedUser> = [];
   for (let index = 0; index < n; index++) {
     let email = faker.internet.email();
@@ -43,9 +43,11 @@ const generateUsers = (n: number = 2): Array<GeneratedUser> => {
       email = faker.internet.email();
     }
     const password = faker.internet.password();
-    const masterKey = getMasterKey(email, password);
-    const master_hash = getMasterHash(masterKey, password);
-    const { encryption_key, encryption_mac } = getEncryptionKey(masterKey);
+    const masterKey = await getMasterKey(email, password);
+    const master_hash = await getMasterHash(masterKey, password);
+    const { encryption_key, encryption_mac } = await getEncryptionKey(
+      masterKey
+    );
     users.push({
       credentials: {
         email: email,
@@ -138,10 +140,10 @@ describe("User functions", () => {
     for (const email in tokenMap) {
       if (Object.prototype.hasOwnProperty.call(tokenMap, email)) {
         const token = tokenMap[email];
-        const symKey = generateSymKey();
+        const symKey = await generateSymKey();
         const userIndex = users.findIndex((a) => a.credentials.email == email);
         expect(users[userIndex]).toBeTruthy();
-        const encryptedSymKey = aesEncrypt(
+        const encryptedSymKey = await aesEncrypt(
           users[userIndex].encryption_key,
           users[userIndex].encryption_mac,
           Buffer.from(symKey, "base64")
@@ -172,7 +174,7 @@ describe("User functions", () => {
         const userIndex = users.findIndex((a) => a.credentials.email == email);
         expect(users[userIndex].keys["symKey"]).toBeTruthy();
         const encryptedSymKey = response.body[0].sym_key;
-        const symKeyData = aesDecrypt(
+        const symKeyData = await aesDecrypt(
           users[userIndex].encryption_key,
           users[userIndex].encryption_mac,
           encryptedSymKey
