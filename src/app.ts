@@ -9,6 +9,7 @@ import loginRoutes from "./routes/loginRoutes";
 import registerRoutes from "./routes/registerRoutes";
 import accountRoutes from "./routes/accountRoutes";
 import groupRoutes from "./routes/groupRoutes";
+import followRoutes from "./routes/followRoutes";
 
 export async function initServer(): Promise<express.Express> {
   const app = express();
@@ -23,6 +24,7 @@ export async function initServer(): Promise<express.Express> {
   app.use(ROUTES.REGISTER, loginRateLimiter, registerRoutes);
   app.use(ROUTES.ACCOUNT, userRateLimiter, accountRoutes);
   app.use(ROUTES.GROUPS, userRateLimiter, groupRoutes);
+  app.use(ROUTES.FOLLOW, userRateLimiter, followRoutes);
 
   return app;
 }

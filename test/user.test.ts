@@ -9,6 +9,7 @@ import {
   generateSymKey,
   aesEncrypt,
   aesDecrypt,
+  generateRsaPair,
 } from "betro-js-lib";
 import { initServer } from "../src/app";
 import postgres from "../src/db/postgres";
@@ -24,6 +25,7 @@ interface GeneratedUser {
   encryption_mac: string;
   keys: { [k: string]: string };
   groups?: Array<GroupResponse>;
+  id?: string;
 }
 
 const headers = {
@@ -119,6 +121,11 @@ describe("User functions", () => {
             .set({ ...headers, Authorization: `Bearer ${token}` });
           expect(response.status).toEqual(200);
           expect(response.body.email).toEqual(email);
+          expect(response.body.user_id).toBeTruthy();
+          const userIndex = users.findIndex(
+            (a) => a.credentials.email == email
+          );
+          users[userIndex].id = response.body.user_id;
         }
       }
     },
@@ -188,6 +195,29 @@ describe("User functions", () => {
         users[userIndex].groups = response.body;
       }
     }
+  });
+  it("Follows user", async () => {
+    const user1 = users[0];
+    const user2 = users[1];
+    const token1 = tokenMap[user1.credentials.email];
+    const { publicKey, privateKey } = await generateRsaPair();
+    user1.keys["privateKey"] = privateKey;
+    user1.keys["publicKey"] = publicKey;
+    const encryptedPrivateKey = await aesEncrypt(
+      user1.encryption_key,
+      user1.encryption_mac,
+      Buffer.from(privateKey, "base64")
+    );
+    const response = await request(app)
+      .post("/api/follow")
+      .set({ ...headers, Authorization: `Bearer ${token1}` })
+      .send({
+        private_key: encryptedPrivateKey,
+        public_key: publicKey,
+        followee_id: user2.id,
+      });
+    expect(response.status).toEqual(200);
+    expect(response.body.is_approved).toEqual(false);
   });
   it("Deletes group", async () => {
     for (const email in tokenMap) {

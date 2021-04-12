@@ -62,15 +62,21 @@ CREATE TABLE group_policies (
     ON DELETE CASCADE
 );
 
-CREATE TABLE group_user_approvals (
+CREATE TABLE group_follow_approvals (
     id uuid DEFAULT gen_random_uuid (),
     user_id uuid NOT NULL,
-    group_id uuid NOT NULL,
+    followee_id uuid NOT NULL,/* This means user_id follows followee_id */
     key_id uuid NOT NULL,
+    group_id uuid,
     is_approved BOOLEAN DEFAULT FALSE,
+    created_at timestamptz DEFAULT NOW(),
     PRIMARY KEY (id),
     CONSTRAINT fk_user
       FOREIGN KEY(user_id) 
+	  REFERENCES users(id)
+    ON DELETE CASCADE,
+    CONSTRAINT fk_followee
+      FOREIGN KEY(followee_id) 
 	  REFERENCES users(id)
     ON DELETE CASCADE,
     CONSTRAINT fk_group
@@ -80,7 +86,8 @@ CREATE TABLE group_user_approvals (
     CONSTRAINT fk_rsa_key
       FOREIGN KEY(key_id)
 	  REFERENCES user_rsa_keys(id)
-    ON DELETE CASCADE
+    ON DELETE CASCADE,
+    UNIQUE (user_id, followee_id)
 );
 
 CREATE TABLE posts (

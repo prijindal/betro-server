@@ -38,3 +38,18 @@ export const deleteSymKey = async (
   );
   return queryResult.rowCount == 1;
 };
+
+export const createRsaKeyPair = async (
+  user_id: string,
+  public_key: string,
+  private_key: string
+): Promise<string> => {
+  const queryResult = await postgres.query(
+    "INSERT INTO user_rsa_keys(user_id, public_key, private_key) VALUES($1, $2, $3) RETURNING *",
+    [user_id, public_key, private_key]
+  );
+  if (queryResult.rowCount == 0) {
+    throw new Error();
+  }
+  return queryResult.rows[0].id;
+};

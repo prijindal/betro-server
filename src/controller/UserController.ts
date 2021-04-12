@@ -1,3 +1,4 @@
+import { IncomingHttpHeaders } from "http";
 import { NextFunction, Request, Response } from "express";
 import { v4 as uuidv4 } from "uuid";
 import { isEmpty } from "lodash";
@@ -46,26 +47,13 @@ export const registerUser = async (
       if (!req.body.inhibit_login) {
         res.status(200).send(response);
       } else {
-        const user_id = response.user_id;
-        let device_id = req.body.device_id;
-        if (isEmpty(device_id)) {
-          device_id = uuidv4();
-        }
-        let device_display_name = req.body.initial_device_display_name;
-        if (isEmpty(device_display_name)) {
-          device_display_name = req.headers["user-agent"];
-        }
-        const { access_token_id, access_token } = await createAccessToken(
-          user_id,
-          device_id,
-          device_display_name
-        );
         try {
-          const token = jsonwebtoken.sign(
-            { user_id, id: access_token_id, key: access_token },
-            SECRET
+          const { token, device_id } = await loginHelper(
+            response.user_id,
+            req.body.device_id,
+            req.body.initial_device_display_name,
+            req.headers
           );
-          // Create access token and send
           res.status(200).send({ token, device_id });
         } catch (e) {
           res.status(502).send(errorResponse(502));
@@ -94,26 +82,13 @@ export const loginUser = async (
     if (verifiedObject.isValid == false) {
       res.status(403).send(errorResponse(403, "Invalid Credentials"));
     } else {
-      const user_id = verifiedObject.user_id;
-      let device_id = req.body.device_id;
-      if (isEmpty(device_id)) {
-        device_id = uuidv4();
-      }
-      let device_display_name = req.body.device_display_name;
-      if (isEmpty(device_display_name)) {
-        device_display_name = req.headers["user-agent"];
-      }
-      const { access_token_id, access_token } = await createAccessToken(
-        user_id,
-        device_id,
-        device_display_name
-      );
       try {
-        const token = jsonwebtoken.sign(
-          { user_id, id: access_token_id, key: access_token },
-          SECRET
+        const { token, device_id } = await loginHelper(
+          verifiedObject.user_id,
+          req.body.device_id,
+          req.body.device_display_name,
+          req.headers
         );
-        // Create access token and send
         res.status(200).send({ token, device_id });
       } catch (e) {
         res.status(502).send(errorResponse(502));
@@ -124,6 +99,34 @@ export const loginUser = async (
     res.status(503).send(errorResponse(503));
     next(e);
   }
+};
+
+export const loginHelper = async (
+  user_id: string,
+  device_id: string,
+  device_display_name: string,
+  headers: IncomingHttpHeaders
+): Promise<{
+  token: string;
+  device_id: string;
+}> => {
+  if (isEmpty(device_id)) {
+    device_id = uuidv4();
+  }
+  if (isEmpty(device_display_name)) {
+    device_display_name = headers["user-agent"];
+  }
+  const { access_token_id, access_token } = await createAccessToken(
+    user_id,
+    device_id,
+    device_display_name
+  );
+  const token = jsonwebtoken.sign(
+    { user_id, id: access_token_id, key: access_token },
+    SECRET
+  );
+  // Create access token and send
+  return { token, device_id };
 };
 
 export const whoAmi = async (req: Request, res: Response): Promise<void> => {

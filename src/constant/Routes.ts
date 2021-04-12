@@ -3,6 +3,7 @@ const ROUTES = {
   REGISTER: "/api/register",
   ACCOUNT: "/api/account",
   GROUPS: "/api/groups",
+  FOLLOW: "/api/follow",
 };
 
 export default ROUTES;
