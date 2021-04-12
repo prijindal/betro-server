@@ -10,6 +10,7 @@ import {
   aesEncrypt,
   aesDecrypt,
   generateRsaPair,
+  rsaEncrypt,
 } from "betro-js-lib";
 import { initServer } from "../src/app";
 import postgres from "../src/db/postgres";
@@ -218,6 +219,55 @@ describe("User functions", () => {
       });
     expect(response.status).toEqual(200);
     expect(response.body.is_approved).toEqual(false);
+  });
+  it("Check approvals and Approve users", async () => {
+    const user1 = users[0];
+    const user2 = users[1];
+    const token2 = tokenMap[user2.credentials.email];
+    const response = await request(app)
+      .get("/api/follow/approvals")
+      .set({ ...headers, Authorization: `Bearer ${token2}` });
+    expect(response.status).toEqual(200);
+    expect(response.body.length).toEqual(1);
+    expect(response.body[0].follower_id).toEqual(user1.id);
+    const publicKey = response.body[0].public_key;
+    const symKey = user2.keys["symKey"];
+    const symKeyEncrypted = await rsaEncrypt(
+      publicKey,
+      Buffer.from(symKey, "base64")
+    );
+    const resp = await request(app)
+      .post("/api/follow/approve")
+      .set({ ...headers, Authorization: `Bearer ${token2}` })
+      .send({
+        follow_id: response.body[0].id,
+        sym_key: symKeyEncrypted,
+        group_id: user2.groups[0].id,
+      });
+    expect(resp.status).toEqual(200);
+    expect(resp.body.approved).toEqual(true);
+  });
+  it("Check followers", async () => {
+    const user1 = users[0];
+    const user2 = users[1];
+    const token2 = tokenMap[user2.credentials.email];
+    const response = await request(app)
+      .get("/api/follow/followers")
+      .set({ ...headers, Authorization: `Bearer ${token2}` });
+    expect(response.status).toEqual(200);
+    expect(response.body.length).toEqual(1);
+    expect(response.body[0].user_id).toEqual(user1.id);
+  });
+  it("Check followees", async () => {
+    const user1 = users[0];
+    const user2 = users[1];
+    const token1 = tokenMap[user1.credentials.email];
+    const response = await request(app)
+      .get("/api/follow/followees")
+      .set({ ...headers, Authorization: `Bearer ${token1}` });
+    expect(response.status).toEqual(200);
+    expect(response.body.length).toEqual(1);
+    expect(response.body[0].user_id).toEqual(user2.id);
   });
   it("Deletes group", async () => {
     for (const email in tokenMap) {

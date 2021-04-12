@@ -1,7 +1,7 @@
 /* /api/login */
 import { Router } from "express";
 import LoginValidation from "../validation/LoginValidation";
-import { loginUser } from "../controller/UserController";
+import { loginUser } from "../controller/LoginController";
 import { validateRequest } from "../middleware/validateRequest";
 
 const router = Router();

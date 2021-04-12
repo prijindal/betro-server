@@ -1,7 +1,7 @@
 /* /api/register */
 import { Router } from "express";
 import RegisterValidation from "../validation/RegisterValidation";
-import { availableUser, registerUser } from "../controller/UserController";
+import { availableUser, registerUser } from "../controller/LoginController";
 import { validateRequest } from "../middleware/validateRequest";
 
 const router = Router();

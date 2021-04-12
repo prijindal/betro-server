@@ -1,14 +1,20 @@
 /* /api/follow */
 import { Router } from "express";
 import { authAccesstoken } from "../middleware/authAccesstoken";
-import { followUser } from "../controller/FollowController";
+import {
+  followUser,
+  getApprovals,
+  approveUser,
+  getFollowers,
+  getFollowees,
+} from "../controller/FollowController";
 import FollowValidation from "../validation/FollowValidation";
 
 const router = Router();
 
-// router.get("/followers", authAccesstoken);
-// router.get("/followees", authAccesstoken);
-// router.get("/approvals", authAccesstoken);
+router.get("/followers", authAccesstoken, getFollowers);
+router.get("/followees", authAccesstoken, getFollowees);
+router.get("/approvals", authAccesstoken, getApprovals);
 router.post("/", authAccesstoken, FollowValidation.follow(), followUser);
 // router.post(
 //   "/unfollow",
@@ -16,12 +22,12 @@ router.post("/", authAccesstoken, FollowValidation.follow(), followUser);
 //   FollowValidation.unfollow(),
 //   unFollowUser
 // );
-// router.post(
-//   "/approve",
-//   authAccesstoken,
-//   FollowValidation.approve(),
-//   approveUser
-// );
+router.post(
+  "/approve",
+  authAccesstoken,
+  FollowValidation.approve(),
+  approveUser
+);
 // router.post(
 //   "/:id/unapprove",
 //   authAccesstoken,

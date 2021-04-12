@@ -25,6 +25,16 @@ export const fetchUserGroups = async (
   return queryResult.rows;
 };
 
+export const fetchGroups = async (
+  group_ids: Array<string>
+): Promise<Array<GroupPostgres>> => {
+  const queryResult = await postgres.query(
+    "SELECT id,key_id,name,is_default FROM group_policies WHERE id = ANY ($1)",
+    [group_ids]
+  );
+  return queryResult.rows;
+};
+
 const clearDefaults = async (user_id: string): Promise<void> => {
   await postgres.query(
     "UPDATE group_policies SET is_default = false WHERE user_id=$1",

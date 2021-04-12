@@ -1,3 +1,4 @@
+import { RsaKeyPostgres } from "../interfaces/database/RsaKeyPostgres";
 import postgres from "../db/postgres";
 
 export const createSymKey = async (
@@ -52,4 +53,17 @@ export const createRsaKeyPair = async (
     throw new Error();
   }
   return queryResult.rows[0].id;
+};
+
+export const getRsaKeys = async (
+  key_ids: Array<string>,
+  include_private_key: boolean
+): Promise<Array<RsaKeyPostgres>> => {
+  const queryResult = await postgres.query(
+    `SELECT id, public_key ${
+      include_private_key ? ",private_key" : ""
+    } from user_rsa_keys WHERE id = ANY ($1)`,
+    [key_ids]
+  );
+  return queryResult.rows;
 };

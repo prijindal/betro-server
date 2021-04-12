@@ -1,4 +1,4 @@
-import { Request } from "express";
+import { Request, Response } from "express";
 import rateLimit from "express-rate-limit";
 import RedisStore from "rate-limit-redis";
 import redis from "../db/redis";
@@ -27,5 +27,11 @@ export const loginRateLimiter = rateLimit({
   message: errorResponse(429),
   keyGenerator: (req: Request) => {
     return req.ip;
+  },
+  skip: (req: Request, res: Response) => {
+    if (req.ip == "::ffff:127.0.0.1") {
+      return true;
+    }
+    return false;
   },
 });
