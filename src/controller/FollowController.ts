@@ -35,8 +35,12 @@ export const followUser = async (
       res.status(404).send(errorResponse(404, "User does not exist"));
     } else {
       const isFollowing = await checkFollow(user_id, followee_id);
-      if (isFollowing) {
-        res.status(411).send(errorResponse(411, "Already Following"));
+      if (isFollowing != null) {
+        if (isFollowing.is_approved) {
+          res.status(411).send(errorResponse(411, "Already Following"));
+        } else {
+          res.status(411).send(errorResponse(411, "Waiting for approval"));
+        }
       } else {
         const key_id = await createRsaKeyPair(user_id, public_key, private_key);
         const followResponse = await createFollow(user_id, followee_id, key_id);

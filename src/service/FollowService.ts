@@ -1,16 +1,18 @@
 import postgres from "../db/postgres";
-import { ApprovalPostgres } from "../interfaces/database/ApprovalPostgres";
 import { FollowPostgres } from "../interfaces/database/FollowPostgres";
 
 export const checkFollow = async (
   user_id: string,
   followee_id: string
-): Promise<boolean> => {
+): Promise<FollowPostgres> => {
   const queryResult = await postgres.query(
-    "SELECT id from group_follow_approvals WHERE user_id = $1 AND followee_id = $2",
+    "SELECT id,is_approved from group_follow_approvals WHERE user_id = $1 AND followee_id = $2",
     [user_id, followee_id]
   );
-  return queryResult.rowCount == 1;
+  if (queryResult.rowCount == 0) {
+    return null;
+  }
+  return queryResult.rows[0];
 };
 
 export const createFollow = async (
@@ -30,7 +32,7 @@ export const createFollow = async (
 
 export const fetchPendingApprovals = async (
   user_id: string
-): Promise<Array<ApprovalPostgres>> => {
+): Promise<Array<FollowPostgres>> => {
   const queryResult = await postgres.query(
     "SELECT * FROM group_follow_approvals WHERE followee_id = $1 AND is_approved=false",
     [user_id]
@@ -40,7 +42,7 @@ export const fetchPendingApprovals = async (
 
 export const fetchFollowers = async (
   user_id: string
-): Promise<Array<ApprovalPostgres>> => {
+): Promise<Array<FollowPostgres>> => {
   const queryResult = await postgres.query(
     "SELECT * FROM group_follow_approvals WHERE followee_id=$1",
     [user_id]
@@ -50,7 +52,7 @@ export const fetchFollowers = async (
 
 export const fetchFollowees = async (
   user_id: string
-): Promise<Array<ApprovalPostgres>> => {
+): Promise<Array<FollowPostgres>> => {
   const queryResult = await postgres.query(
     "SELECT * FROM group_follow_approvals WHERE user_id=$1",
     [user_id]
@@ -83,4 +85,18 @@ export const approveFollowRequest = async (
     [group_id, sym_key, user_id, follow_id]
   );
   return queryResult.rowCount == 1;
+};
+
+export const fetchUserGroupsFollows = async (
+  user_id: string,
+  group_ids: Array<string>
+): Promise<Array<FollowPostgres>> => {
+  const queryResult = await postgres.query(
+    "SELECT * from group_follow_approvals WHERE user_id = $1 AND group_id = ANY ($2)",
+    [user_id, group_ids]
+  );
+  if (queryResult.rowCount == 0) {
+    return null;
+  }
+  return queryResult.rows;
 };

@@ -11,10 +11,19 @@ import {
   aesDecrypt,
   generateRsaPair,
   rsaEncrypt,
+  rsaDecrypt,
+  symEncrypt,
+  symDecrypt,
 } from "betro-js-lib";
 import { initServer } from "../src/app";
 import postgres from "../src/db/postgres";
 import { GroupResponse } from "../src/interfaces/responses/GroupResponse";
+import {
+  PostResponse,
+  PostKeyResponse,
+  PostUserResponse,
+  PostsFeedResponse,
+} from "../src/interfaces/responses/PostResponse";
 
 interface GeneratedUser {
   credentials: {
@@ -268,6 +277,44 @@ describe("User functions", () => {
     expect(response.status).toEqual(200);
     expect(response.body.length).toEqual(1);
     expect(response.body[0].user_id).toEqual(user2.id);
+  });
+  it("Create new post", async () => {
+    const user2 = users[1];
+    const token2 = tokenMap[user2.credentials.email];
+    const data = "My First Post";
+    const encrypted = await symEncrypt(user2.keys["symKey"], Buffer.from(data));
+    const response = await request(app)
+      .post("/api/post")
+      .send({ group_id: user2.groups[0].id, text_content: encrypted })
+      .set({ ...headers, Authorization: `Bearer ${token2}` });
+    expect(response.status).toEqual(200);
+    expect(response.body.text_content).toEqual(encrypted);
+  });
+  it("Fetches user posts", async () => {
+    const user1 = users[0];
+    const user2 = users[1];
+    const token1 = tokenMap[user1.credentials.email];
+    const response = await request(app)
+      .get(`/api/user/${user2.id}/posts`)
+      .set({ ...headers, Authorization: `Bearer ${token1}` });
+    expect(response.status).toEqual(200);
+    expect(response.body.posts.length).toEqual(1);
+    const body: PostsFeedResponse = response.body;
+    const posts: Array<PostResponse> = body.posts;
+    const keys = body.keys;
+    const userresponse = body.users;
+    const { sym_key, private_key } = keys[posts[0].key_id];
+    const priv_key = await aesDecrypt(
+      user1.encryption_key,
+      user1.encryption_mac,
+      private_key
+    );
+    const symkey = await rsaDecrypt(priv_key.data.toString("base64"), sym_key);
+    const data = await symDecrypt(
+      symkey.toString("base64"),
+      posts[0].text_content
+    );
+    expect(data.toString("utf-8")).toEqual("My First Post");
   });
   it("Deletes group", async () => {
     for (const email in tokenMap) {

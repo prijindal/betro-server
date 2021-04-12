@@ -96,7 +96,9 @@ CREATE TABLE posts (
     user_id uuid NOT NULL,
     group_id uuid NOT NULL,
     key_id uuid NOT NULL,
-    content VARCHAR NOT NULL,
+    text_content VARCHAR,
+    media_content VARCHAR,
+    media_encoding VARCHAR,
     created_at timestamptz DEFAULT NOW(),
     PRIMARY KEY (id),
     CONSTRAINT fk_user
@@ -109,6 +111,6 @@ CREATE TABLE posts (
     ON DELETE CASCADE,
     CONSTRAINT fk_sym_key
       FOREIGN KEY(key_id)
-	  REFERENCES user_rsa_keys(id)
+	  REFERENCES user_sym_keys(id)
     ON DELETE CASCADE
 );
