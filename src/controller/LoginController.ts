@@ -109,14 +109,12 @@ export const loginUser = async (
               )
             );
         } else {
-          res
-            .status(200)
-            .send({
-              token,
-              device_id,
-              public_key: rsaKeys[0].public_key,
-              private_key: rsaKeys[0].private_key,
-            });
+          res.status(200).send({
+            token,
+            device_id,
+            public_key: rsaKeys[0].public_key,
+            private_key: rsaKeys[0].private_key,
+          });
         }
       } catch (e) {
         res.status(502).send(errorResponse(502));
