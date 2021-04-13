@@ -1,19 +1,15 @@
 import postgres from "../db/postgres";
 import { generateServerHash } from "../util/crypto";
 
-export type RegisterBody =
-  | {
-      email: string;
-      master_hash: string;
-      inhibit_login: false;
-    }
-  | {
-      email: string;
-      master_hash: string;
-      inhibit_login: true;
-      device_id: string;
-      initial_device_display_name: string;
-    };
+export type RegisterBody = {
+  email: string;
+  master_hash: string;
+  inhibit_login: boolean;
+  public_key: string;
+  private_key: string;
+  device_id: string;
+  initial_device_display_name: string;
+};
 
 export const isEmailAvailable = async (email: string): Promise<boolean> => {
   const queryResult = await postgres.query(
@@ -24,14 +20,16 @@ export const isEmailAvailable = async (email: string): Promise<boolean> => {
 };
 
 export const createUser = async (
-  body: RegisterBody
+  email: string,
+  master_hash: string,
+  key_id: string
 ): Promise<{
   user_id: string;
 }> => {
-  const hash = generateServerHash(body.master_hash);
+  const hash = generateServerHash(master_hash);
   const inserted = await postgres.query(
-    "INSERT INTO users(email,master_hash) VALUES ($1,$2) RETURNING *",
-    [body.email, hash]
+    "INSERT INTO users(email,master_hash, key_id) VALUES ($1,$2, $3) RETURNING *",
+    [email, hash, key_id]
   );
   if (inserted.rowCount == 0) {
     throw new Error();

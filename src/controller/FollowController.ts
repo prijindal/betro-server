@@ -27,8 +27,6 @@ export const followUser = async (
 ): Promise<void> => {
   const user_id = res.locals.user_id;
   const followee_id = req.body.followee_id;
-  const public_key = req.body.public_key;
-  const private_key = req.body.private_key;
   try {
     const followeeEmail = userEmail(followee_id);
     if (followeeEmail == null) {
@@ -42,11 +40,8 @@ export const followUser = async (
           res.status(411).send(errorResponse(411, "Waiting for approval"));
         }
       } else {
-        const key_id = await createRsaKeyPair(user_id, public_key, private_key);
-        const followResponse = await createFollow(user_id, followee_id, key_id);
+        const followResponse = await createFollow(user_id, followee_id);
         res.status(200).send({
-          public_key: public_key,
-          private_key: private_key,
           is_approved: followResponse.is_approved,
           id: followResponse.user_id,
         });
@@ -64,17 +59,22 @@ export const getApprovals = async (
   const user_id = res.locals.user_id;
   try {
     const approvals = await fetchPendingApprovals(user_id);
-    const key_ids = approvals.map((a) => a.key_id);
+    const user_ids = approvals.map((a) => a.user_id);
+    const users = await fetchUsers(user_ids);
+    const key_ids = users.map((a) => a.key_id);
     const rsa_keys = await getRsaKeys(key_ids, false);
     const response: Array<ApprovalResponse> = [];
     approvals.forEach((approval) => {
-      const rsa_key = rsa_keys.find((a) => a.id == approval.key_id);
-      if (rsa_key != null) {
-        response.push({
-          id: approval.id,
-          follower_id: approval.user_id,
-          public_key: rsa_key.public_key,
-        });
+      const user = users.find((a) => a.id == approval.user_id);
+      if (user != null) {
+        const rsa_key = rsa_keys.find((a) => a.id == user.key_id);
+        if (rsa_key != null) {
+          response.push({
+            id: approval.id,
+            follower_id: approval.user_id,
+            public_key: rsa_key.public_key,
+          });
+        }
       }
     });
     res.status(200).send(response);

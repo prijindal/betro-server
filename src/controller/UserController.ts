@@ -4,7 +4,6 @@ import { checkFollow, fetchUserGroupsFollows } from "../service/FollowService";
 import { fetchUsers } from "../service/UserService";
 import { errorResponse } from "../util/responseHandler";
 import {
-  PostKeyResponse,
   PostUserResponse,
   PostsFeedResponse,
 } from "../interfaces/responses/PostResponse";
@@ -51,23 +50,13 @@ export const userPosts = async (
       } else {
         const posts = await fetchUserPosts(users[0].id);
         const posts_users: { [user_id: string]: PostUserResponse } = {};
-        const keys: { [key_id: string]: PostKeyResponse } = {};
+        const keys: { [key_id: string]: string } = {};
         const group_ids = posts.map((a) => a.group_id);
         const follows = await fetchUserGroupsFollows(own_id, group_ids);
-        const rsaKeysDb = await getRsaKeys(
-          follows.map((a) => a.key_id),
-          true
-        );
         posts.forEach((post) => {
           const follow = follows.find((a) => a.group_id == post.group_id);
           if (follow != null) {
-            const rsaKey = rsaKeysDb.find((a) => a.id == follow.key_id);
-            if (rsaKeysDb != null) {
-              keys[post.key_id] = {
-                sym_key: follow.sym_key,
-                private_key: rsaKey.private_key,
-              };
-            }
+            keys[post.key_id] = follow.sym_key;
           }
         });
         posts_users[user_id] = users[0];

@@ -16,6 +16,7 @@ import {
 } from "../service/LoginService";
 import { SECRET } from "../config";
 import { userEmail } from "../service/AccountService";
+import { createRsaKeyPair, getRsaKeys } from "../service/KeyService";
 
 export const availableUser = async (
   req: Request<null, null, null, { email: string }>,
@@ -43,7 +44,14 @@ export const registerUser = async (
   try {
     const queryResult = await isEmailAvailable(req.body.email);
     if (queryResult) {
-      const response = await createUser(req.body);
+      const public_key = req.body.public_key;
+      const private_key = req.body.private_key;
+      const key_id = await createRsaKeyPair(public_key, private_key);
+      const response = await createUser(
+        req.body.email,
+        req.body.master_hash,
+        key_id
+      );
       if (!req.body.inhibit_login) {
         res.status(200).send(response);
       } else {
@@ -64,6 +72,7 @@ export const registerUser = async (
       res.status(400).send(errorResponse(400, "Email is not available"));
     }
   } catch (e) {
+    console.error(e);
     res.status(503).send(errorResponse(503));
     next(e);
   }
@@ -89,7 +98,26 @@ export const loginUser = async (
           req.body.device_display_name,
           req.headers
         );
-        res.status(200).send({ token, device_id });
+        const rsaKeys = await getRsaKeys([verifiedObject.key_id], true);
+        if (rsaKeys.length == 0) {
+          res
+            .status(404)
+            .send(
+              errorResponse(
+                404,
+                "Your account has some issues. Please register again"
+              )
+            );
+        } else {
+          res
+            .status(200)
+            .send({
+              token,
+              device_id,
+              public_key: rsaKeys[0].public_key,
+              private_key: rsaKeys[0].private_key,
+            });
+        }
       } catch (e) {
         res.status(502).send(errorResponse(502));
         next(e);

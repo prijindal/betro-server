@@ -20,7 +20,6 @@ import postgres from "../src/db/postgres";
 import { GroupResponse } from "../src/interfaces/responses/GroupResponse";
 import {
   PostResponse,
-  PostKeyResponse,
   PostUserResponse,
   PostsFeedResponse,
 } from "../src/interfaces/responses/PostResponse";
@@ -33,7 +32,7 @@ interface GeneratedUser {
   password: string;
   encryption_key: string;
   encryption_mac: string;
-  keys: { [k: string]: string };
+  keys: { publicKey?: string; privateKey?: string; symKey?: string };
   groups?: Array<GroupResponse>;
   id?: string;
 }
@@ -101,10 +100,22 @@ describe("User functions", () => {
   });
   it("Create users", async () => {
     for await (const user of users) {
+      const { publicKey, privateKey } = await generateRsaPair();
+      const encryptedPrivateKey = await aesEncrypt(
+        user.encryption_key,
+        user.encryption_mac,
+        Buffer.from(privateKey, "base64")
+      );
       const response = await request(app)
         .post("/api/register")
         .set(headers)
-        .send(JSON.stringify(user.credentials));
+        .send(
+          JSON.stringify({
+            ...user.credentials,
+            public_key: publicKey,
+            private_key: encryptedPrivateKey,
+          })
+        );
       expect(response.status).toEqual(200);
       expect(response.body.user_id).toBeTruthy();
     }
@@ -118,6 +129,8 @@ describe("User functions", () => {
       expect(response.status).toEqual(200);
       expect(response.body.device_id).toBeTruthy();
       tokenMap[user.credentials.email] = response.body.token;
+      user.keys["publicKey"] = response.body.public_key;
+      user.keys["privateKey"] = response.body.private_key;
     }
   });
   it(
@@ -210,20 +223,10 @@ describe("User functions", () => {
     const user1 = users[0];
     const user2 = users[1];
     const token1 = tokenMap[user1.credentials.email];
-    const { publicKey, privateKey } = await generateRsaPair();
-    user1.keys["privateKey"] = privateKey;
-    user1.keys["publicKey"] = publicKey;
-    const encryptedPrivateKey = await aesEncrypt(
-      user1.encryption_key,
-      user1.encryption_mac,
-      Buffer.from(privateKey, "base64")
-    );
     const response = await request(app)
       .post("/api/follow")
       .set({ ...headers, Authorization: `Bearer ${token1}` })
       .send({
-        private_key: encryptedPrivateKey,
-        public_key: publicKey,
         followee_id: user2.id,
       });
     expect(response.status).toEqual(200);
@@ -303,11 +306,11 @@ describe("User functions", () => {
     const posts: Array<PostResponse> = body.posts;
     const keys = body.keys;
     const userresponse = body.users;
-    const { sym_key, private_key } = keys[posts[0].key_id];
+    const sym_key = keys[posts[0].key_id];
     const priv_key = await aesDecrypt(
       user1.encryption_key,
       user1.encryption_mac,
-      private_key
+      user1.keys.privateKey
     );
     const symkey = await rsaDecrypt(priv_key.data.toString("base64"), sym_key);
     const data = await symDecrypt(

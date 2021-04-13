@@ -9,6 +9,8 @@ const RegisterValidation = {
     return [
       body("email", "email is required!").not().isEmpty().isEmail(),
       body("master_hash", "master hash is required").not().isEmpty(),
+      body("public_key", "public_key is required!").not().isEmpty(),
+      body("private_key", "private_key is required!").not().isEmpty(),
       body("inhibit_login", "master hash is required").toBoolean(),
     ];
   },

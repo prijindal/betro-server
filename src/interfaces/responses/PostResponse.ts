@@ -1,7 +1,7 @@
 export interface PostsFeedResponse {
   posts: Array<PostResponse>;
   users: { [user_id: string]: PostUserResponse };
-  keys: { [key_id: string]: PostKeyResponse };
+  keys: { [key_id: string]: string };
 }
 
 export interface PostResponse {
@@ -16,9 +16,4 @@ export interface PostResponse {
 export interface PostUserResponse {
   id: string;
   email: string;
-}
-
-export interface PostKeyResponse {
-  sym_key: string;
-  private_key: string;
 }

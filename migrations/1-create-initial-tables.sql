@@ -1,10 +1,22 @@
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
+CREATE TABLE user_rsa_keys (
+    id uuid DEFAULT gen_random_uuid (),
+    public_key VARCHAR UNIQUE NOT NULL,
+    private_key VARCHAR NOT NULL,
+    PRIMARY KEY (id)
+);
+
 CREATE TABLE users (
     id uuid DEFAULT gen_random_uuid (),
     email VARCHAR NOT NULL,
     master_hash VARCHAR UNIQUE NOT NULL,
-    PRIMARY KEY (id)
+    key_id uuid NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_rsa_key
+      FOREIGN KEY(key_id) 
+	  REFERENCES user_rsa_keys(id)
+    ON DELETE CASCADE
 );
 
 CREATE TABLE access_tokens (
@@ -15,18 +27,6 @@ CREATE TABLE access_tokens (
     device_display_name VARCHAR,
     created_at timestamptz DEFAULT NOW(),
     accessed_at timestamptz,
-    PRIMARY KEY (id),
-    CONSTRAINT fk_user
-      FOREIGN KEY(user_id) 
-	  REFERENCES users(id)
-    ON DELETE CASCADE
-);
-
-CREATE TABLE user_rsa_keys (
-    id uuid DEFAULT gen_random_uuid (),
-    user_id uuid NOT NULL,
-    public_key VARCHAR UNIQUE NOT NULL,
-    private_key VARCHAR NOT NULL,
     PRIMARY KEY (id),
     CONSTRAINT fk_user
       FOREIGN KEY(user_id) 
@@ -66,7 +66,6 @@ CREATE TABLE group_follow_approvals (
     id uuid DEFAULT gen_random_uuid (),
     user_id uuid NOT NULL,
     followee_id uuid NOT NULL,/* This means user_id follows followee_id */
-    key_id uuid NOT NULL,
     sym_key VARCHAR,
     group_id uuid,
     is_approved BOOLEAN DEFAULT FALSE,
@@ -83,10 +82,6 @@ CREATE TABLE group_follow_approvals (
     CONSTRAINT fk_group
       FOREIGN KEY(group_id)
 	  REFERENCES group_policies(id)
-    ON DELETE CASCADE,
-    CONSTRAINT fk_rsa_key
-      FOREIGN KEY(key_id)
-	  REFERENCES user_rsa_keys(id)
     ON DELETE CASCADE,
     UNIQUE (user_id, followee_id)
 );

@@ -17,12 +17,11 @@ export const checkFollow = async (
 
 export const createFollow = async (
   user_id: string,
-  followee_id: string,
-  key_id: string
+  followee_id: string
 ): Promise<FollowPostgres> => {
   const queryResult = await postgres.query(
-    "INSERT INTO group_follow_approvals(user_id, followee_id, key_id) VALUES($1, $2, $3) RETURNING *",
-    [user_id, followee_id, key_id]
+    "INSERT INTO group_follow_approvals(user_id, followee_id) VALUES($1, $2) RETURNING *",
+    [user_id, followee_id]
   );
   if (queryResult.rowCount == 0) {
     throw new Error();

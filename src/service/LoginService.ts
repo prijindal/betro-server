@@ -17,9 +17,11 @@ export type LoginBody = {
 export const checkUserCredentials = async (
   email: string,
   password: string
-): Promise<{ isValid: false } | { isValid: true; user_id: string }> => {
+): Promise<
+  { isValid: false } | { isValid: true; user_id: string; key_id: string }
+> => {
   const queryResult = await postgres.query(
-    "SELECT id,master_hash from users WHERE email = $1",
+    "SELECT id,master_hash,key_id from users WHERE email = $1",
     [email]
   );
   if (queryResult.rowCount == 0) {
@@ -29,7 +31,11 @@ export const checkUserCredentials = async (
   if (!verifyServerHash(password, server_hash)) {
     return { isValid: false };
   }
-  return { isValid: true, user_id: queryResult.rows[0].id };
+  return {
+    isValid: true,
+    user_id: queryResult.rows[0].id,
+    key_id: queryResult.rows[0].key_id,
+  };
 };
 
 export const createAccessToken = async (
