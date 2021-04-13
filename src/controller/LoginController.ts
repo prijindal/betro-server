@@ -17,6 +17,7 @@ import {
 import { SECRET } from "../config";
 import { userEmail } from "../service/AccountService";
 import { createRsaKeyPair, getRsaKeys } from "../service/KeyService";
+import { fetchUsers } from "../service/UserService";
 
 export const availableUser = async (
   req: Request<null, null, null, { email: string }>,
@@ -159,4 +160,23 @@ export const whoAmi = async (req: Request, res: Response): Promise<void> => {
   const user_id = res.locals.user_id;
   const email = await userEmail(user_id);
   res.status(200).send({ user_id, email });
+};
+
+export const getKeys = async (req: Request, res: Response): Promise<void> => {
+  const user_id = res.locals.user_id;
+  try {
+    const users = await fetchUsers([user_id]);
+    if (users.length == 0) {
+      res.status(500).send(errorResponse(500));
+    } else {
+      const keys = await getRsaKeys([users[0].key_id], true);
+      if (keys.length == 0) {
+        res.status(500).send(errorResponse(500));
+      } else {
+        res.status(200).send({ private_key: keys[0].private_key });
+      }
+    }
+  } catch (e) {
+    res.status(503).send(errorResponse(503));
+  }
 };

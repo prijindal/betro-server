@@ -11,6 +11,7 @@ export interface PostResponse {
   media_encoding: string;
   text_content: string;
   key_id: string;
+  created_at: Date;
 }
 
 export interface PostUserResponse {

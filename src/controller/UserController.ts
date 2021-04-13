@@ -22,6 +22,7 @@ export const userProfile = async (
       res.status(200).send({
         id: users[0].id,
         email: users[0].email,
+        is_following: isFollowing != null,
         is_approved: isFollowing != null && isFollowing.is_approved,
       });
     }

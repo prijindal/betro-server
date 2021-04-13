@@ -71,6 +71,7 @@ export const getApprovals = async (
         if (rsa_key != null) {
           response.push({
             id: approval.id,
+            email: user.email,
             follower_id: approval.user_id,
             public_key: rsa_key.public_key,
           });

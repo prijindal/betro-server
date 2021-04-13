@@ -36,6 +36,7 @@ export const postProcessPosts = async (
       media_encoding: post.media_encoding,
       text_content: post.text_content,
       key_id: post.key_id,
+      created_at: post.created_at,
     })),
     keys,
     users: posts_users,
