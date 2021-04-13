@@ -61,12 +61,12 @@ export const postGroup = async (
 };
 
 export const deleteGroup = async (
-  req: Request<{ id: string }>,
+  req: Request<{ group_id: string }>,
   res: Response<{ deleted: boolean } | ErrorDataType>
 ): Promise<void> => {
   const user_id = res.locals.user_id;
   try {
-    const group = await fetchUserGroup(user_id, req.params.id);
+    const group = await fetchUserGroup(user_id, req.params.group_id);
     if (group == null) {
       res.status(404).send(errorResponse(404, "Group not found"));
     } else {

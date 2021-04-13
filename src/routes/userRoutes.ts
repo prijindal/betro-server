@@ -3,14 +3,22 @@ import { Router } from "express";
 import { authAccesstoken } from "../middleware/authAccesstoken";
 import { userProfile, userPosts } from "../controller/UserController";
 import UserValidation from "../validation/UserValidation";
+import { validateRequest } from "../middleware/validateRequest";
 
 const router = Router();
 
-router.get("/:id", authAccesstoken, UserValidation.profile(), userProfile);
+router.get(
+  "/:user_id",
+  authAccesstoken,
+  UserValidation.profile(),
+  validateRequest,
+  userProfile
+);
 router.get(
   "/:user_id/posts",
   authAccesstoken,
   UserValidation.posts(),
+  validateRequest,
   userPosts
 );
 

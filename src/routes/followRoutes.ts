@@ -9,13 +9,20 @@ import {
   getFollowees,
 } from "../controller/FollowController";
 import FollowValidation from "../validation/FollowValidation";
+import { validateRequest } from "../middleware/validateRequest";
 
 const router = Router();
 
 router.get("/followers", authAccesstoken, getFollowers);
 router.get("/followees", authAccesstoken, getFollowees);
 router.get("/approvals", authAccesstoken, getApprovals);
-router.post("/", authAccesstoken, FollowValidation.follow(), followUser);
+router.post(
+  "/",
+  authAccesstoken,
+  FollowValidation.follow(),
+  validateRequest,
+  followUser
+);
 // router.post(
 //   "/unfollow",
 //   authAccesstoken,
@@ -26,6 +33,7 @@ router.post(
   "/approve",
   authAccesstoken,
   FollowValidation.approve(),
+  validateRequest,
   approveUser
 );
 // router.post(

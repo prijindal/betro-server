@@ -306,6 +306,9 @@ describe("User functions", () => {
     const posts: Array<PostResponse> = body.posts;
     const keys = body.keys;
     const userresponse = body.users;
+    expect(userresponse[posts[0].user_id].email).toEqual(
+      user2.credentials.email
+    );
     const sym_key = keys[posts[0].key_id];
     const priv_key = await aesDecrypt(
       user1.encryption_key,
