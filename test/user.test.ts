@@ -133,6 +133,21 @@ describe("User functions", () => {
       user.keys["privateKey"] = response.body.private_key;
     }
   });
+  it("Verifies keys route", async () => {
+    for (const email in tokenMap) {
+      if (Object.prototype.hasOwnProperty.call(tokenMap, email)) {
+        const token = tokenMap[email];
+        const response = await request(app)
+          .get("/api/account/keys")
+          .set({ ...headers, Authorization: `Bearer ${token}` });
+        const userIndex = users.findIndex((a) => a.credentials.email == email);
+        expect(response.status).toEqual(200);
+        expect(response.body.private_key).toEqual(
+          users[userIndex].keys.privateKey
+        );
+      }
+    }
+  });
   it(
     "Check whoami",
     async () => {
@@ -292,6 +307,16 @@ describe("User functions", () => {
       .set({ ...headers, Authorization: `Bearer ${token2}` });
     expect(response.status).toEqual(200);
     expect(response.body.text_content).toEqual(encrypted);
+  });
+  it("Fetches user info", async () => {
+    const user1 = users[0];
+    const user2 = users[1];
+    const token1 = tokenMap[user1.credentials.email];
+    const response = await request(app)
+      .get(`/api/user/${user2.id}`)
+      .set({ ...headers, Authorization: `Bearer ${token1}` });
+    expect(response.status).toEqual(200);
+    expect(response.body.email).toEqual(user2.credentials.email);
   });
   it("Fetches user posts", async () => {
     const user1 = users[0];

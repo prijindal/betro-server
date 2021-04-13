@@ -36,7 +36,7 @@
     "express-rate-limit": "^5.2.6",
     "express-validator": "^6.10.0",
     "faker": "^5.5.3",
-    "betro-js-lib": "git://github.com/prijindal/betro-js-lib.git#71771abb7102dcfd96ffcf16caf06c5831ee5000",
+    "betro-js-lib": "git://github.com/prijindal/betro-js-lib.git#fb75b221d96aff3ee65803cb80290c953ff215bc",
     "ioredis": "^4.26.0",
     "jsonwebtoken": "^8.5.1",
     "lodash": "^4.17.21",
