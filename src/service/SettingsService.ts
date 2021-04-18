@@ -44,7 +44,7 @@ export const saveUserNotificationSetting = async (
     );
   } else {
     queryResponse = await postgres.query(
-      "UPDATE settings_notifications SET enabled = $1 WHERE user_id=$1 AND action=$2 RETURNING *",
+      "UPDATE settings_notifications SET enabled = $1 WHERE user_id=$2 AND action=$3 RETURNING *",
       [enabled, user_id, action]
     );
   }
