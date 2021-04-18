@@ -264,7 +264,7 @@ describe("User functions", () => {
       .post("/api/follow")
       .set({ ...headers, Authorization: `Bearer ${token1}` })
       .send({
-        followee_id: user2.id,
+        followee_username: user2.credentials.username,
       });
     expect(response.status).toEqual(200);
     expect(response.body.is_approved).toEqual(false);
@@ -335,7 +335,7 @@ describe("User functions", () => {
     const user2 = users[1];
     const token1 = tokenMap[user1.credentials.email];
     const response = await request(app)
-      .get(`/api/user/${user2.id}`)
+      .get(`/api/user/${user2.credentials.username}`)
       .set({ ...headers, Authorization: `Bearer ${token1}` });
     expect(response.status).toEqual(200);
     expect(response.body.username).toEqual(user2.credentials.username);
@@ -345,7 +345,7 @@ describe("User functions", () => {
     const user2 = users[1];
     const token1 = tokenMap[user1.credentials.email];
     const response = await request(app)
-      .get(`/api/user/${user2.id}/posts`)
+      .get(`/api/user/${user2.credentials.username}/posts`)
       .set({ ...headers, Authorization: `Bearer ${token1}` });
     expect(response.status).toEqual(200);
     expect(response.body.posts.length).toEqual(1);

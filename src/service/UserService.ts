@@ -10,3 +10,16 @@ export const fetchUsers = async (
   );
   return queryResult.rows;
 };
+
+export const fetchUserByUsername = async (
+  username: string
+): Promise<UserPostgres | null> => {
+  const queryResult = await postgres.query(
+    "SELECT * FROM users WHERE username = $1",
+    [username]
+  );
+  if (queryResult.rowCount == 0) {
+    return null;
+  }
+  return queryResult.rows[0];
+};

@@ -13,12 +13,11 @@ import { errorResponse } from "../util/responseHandler";
 import { ErrorDataType } from "../constant/ErrorData";
 import { FollowRequest } from "../interfaces/requests/FollowRequest";
 import { FollowResponse } from "../interfaces/responses/FollowResponse";
-import { userEmail } from "../service/AccountService";
 import { ApprovalResponse } from "../interfaces/responses/ApprovalResponse";
 import { ApproveRequest } from "../interfaces/requests/ApproveRequest";
 import { fetchGroups, fetchUserGroup } from "../service/GroupService";
 import { FollowerResponse } from "../interfaces/responses/FollowerResponse";
-import { fetchUsers } from "../service/UserService";
+import { fetchUserByUsername, fetchUsers } from "../service/UserService";
 import { FolloweeResponse } from "../interfaces/responses/FolloweeResponse";
 
 export const followUser = async (
@@ -26,13 +25,13 @@ export const followUser = async (
   res: Response<FollowResponse | ErrorDataType>
 ): Promise<void> => {
   const user_id = res.locals.user_id;
-  const followee_id = req.body.followee_id;
+  const followee_username = req.body.followee_username;
   try {
-    const followeeEmail = userEmail(followee_id);
-    if (followeeEmail == null) {
+    const followeeUser = await fetchUserByUsername(followee_username);
+    if (followeeUser == null) {
       res.status(404).send(errorResponse(404, "User does not exist"));
     } else {
-      const isFollowing = await checkFollow(user_id, followee_id);
+      const isFollowing = await checkFollow(user_id, followeeUser.id);
       if (isFollowing != null) {
         if (isFollowing.is_approved) {
           res.status(411).send(errorResponse(411, "Already Following"));
@@ -40,7 +39,7 @@ export const followUser = async (
           res.status(411).send(errorResponse(411, "Waiting for approval"));
         }
       } else {
-        const followResponse = await createFollow(user_id, followee_id);
+        const followResponse = await createFollow(user_id, followeeUser.id);
         res.status(200).send({
           is_approved: followResponse.is_approved,
           id: followResponse.user_id,

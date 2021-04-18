@@ -4,18 +4,22 @@ import {
   PostUserResponse,
   PostsFeedResponse,
 } from "../interfaces/responses/PostResponse";
-import { PostPostges } from "src/interfaces/database/PostPostgres";
+import { PostPostges } from "../interfaces/database/PostPostgres";
+import { FollowPostgres } from "../interfaces/database/FollowPostgres";
 
 export const postProcessPosts = async (
   own_id: string,
-  posts: PostPostges[]
+  posts: PostPostges[],
+  follows?: Array<FollowPostgres>
 ): Promise<PostsFeedResponse> => {
   const posts_users: { [user_id: string]: PostUserResponse } = {};
   const keys: { [key_id: string]: string } = {};
   const group_ids = posts.map((a) => a.group_id);
   const user_ids = posts.map((a) => a.user_id);
   const users = await fetchUsers(user_ids);
-  const follows = await fetchUserGroupsFollows(own_id, group_ids);
+  if (follows == null || follows.length == 0) {
+    follows = await fetchUserGroupsFollows(own_id, group_ids);
+  }
   posts.forEach((post) => {
     const follow = follows.find((a) => a.group_id == post.group_id);
     if (follow != null) {

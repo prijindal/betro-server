@@ -95,7 +95,7 @@ export const fetchUserGroupsFollows = async (
     [user_id, group_ids]
   );
   if (queryResult.rowCount == 0) {
-    return null;
+    return [];
   }
   return queryResult.rows;
 };

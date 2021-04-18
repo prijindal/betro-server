@@ -8,14 +8,14 @@ import { validateRequest } from "../middleware/validateRequest";
 const router = Router();
 
 router.get(
-  "/:user_id",
+  "/:username",
   authAccesstoken,
   UserValidation.profile(),
   validateRequest,
   userProfile
 );
 router.get(
-  "/:user_id/posts",
+  "/:username/posts",
   authAccesstoken,
   UserValidation.posts(),
   validateRequest,
