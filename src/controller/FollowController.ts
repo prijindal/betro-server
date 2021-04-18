@@ -19,6 +19,8 @@ import { fetchGroups, fetchUserGroup } from "../service/GroupService";
 import { FollowerResponse } from "../interfaces/responses/FollowerResponse";
 import { fetchUserByUsername, fetchUsers } from "../service/UserService";
 import { FolloweeResponse } from "../interfaces/responses/FolloweeResponse";
+import { createUserNotification } from "../service/NotificationService";
+import { checkUserNotificationSetting } from "../service/SettingsService";
 
 export const followUser = async (
   req: Request<null, null, FollowRequest>,
@@ -40,6 +42,22 @@ export const followUser = async (
         }
       } else {
         const followResponse = await createFollow(user_id, followeeUser.id);
+        const users = await fetchUsers([user_id]);
+        if (users.length == 1) {
+          const user = users[0];
+          const notificationEnabled = await checkUserNotificationSetting(
+            followeeUser.id,
+            "on_followed"
+          );
+          if (notificationEnabled) {
+            await createUserNotification(
+              followeeUser.id,
+              "on_followed",
+              `${user.username} asked to follow you`,
+              { username: user.username }
+            );
+          }
+        }
         res.status(200).send({
           is_approved: followResponse.is_approved,
           id: followResponse.user_id,
@@ -47,6 +65,7 @@ export const followUser = async (
       }
     }
   } catch (e) {
+    console.error(e);
     res.status(503).send(errorResponse(503));
   }
 };
@@ -170,6 +189,22 @@ export const approveUser = async (
             group_id,
             sym_key
           );
+          const users = await fetchUsers([user_id]);
+          if (users.length == 1) {
+            const user = users[0];
+            const notificationEnabled = await checkUserNotificationSetting(
+              approval.user_id,
+              "on_approved"
+            );
+            if (notificationEnabled) {
+              await createUserNotification(
+                approval.user_id,
+                "on_approved",
+                `${user.username} has approved your follow request`,
+                { username: user.username }
+              );
+            }
+          }
           res.status(200).send({ approved });
         }
       }

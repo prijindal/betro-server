@@ -191,6 +191,25 @@ describe("User functions", () => {
     },
     10 * 1000
   );
+  it(
+    "Enables notification settings",
+    async () => {
+      const notification_settings = ["on_approved", "on_followed"];
+      for (const email in tokenMap) {
+        if (Object.prototype.hasOwnProperty.call(tokenMap, email)) {
+          for (const notification_setting of notification_settings) {
+            const token = tokenMap[email];
+            const response = await request(app)
+              .post("/api/settings/notifications")
+              .send({ action: notification_setting, enabled: true })
+              .set({ ...headers, Authorization: `Bearer ${token}` });
+            expect(response.status).toEqual(200);
+          }
+        }
+      }
+    },
+    10 * 1000
+  );
   it("Fetches user groups", async () => {
     for (const email in tokenMap) {
       if (Object.prototype.hasOwnProperty.call(tokenMap, email)) {
@@ -269,6 +288,22 @@ describe("User functions", () => {
     expect(response.status).toEqual(200);
     expect(response.body.is_approved).toEqual(false);
   });
+  it("Check notification for follow", async () => {
+    const user1 = users[0];
+    const user2 = users[1];
+    const token2 = tokenMap[user2.credentials.email];
+    const response = await request(app)
+      .get("/api/notifications")
+      .set({ ...headers, Authorization: `Bearer ${token2}` });
+    expect(response.status).toEqual(200);
+    expect(response.body.length).toEqual(1);
+    expect(response.body[0].content).toEqual(
+      `${user1.credentials.username} asked to follow you`
+    );
+    expect(response.body[0].payload.username).toEqual(
+      user1.credentials.username
+    );
+  });
   it("Check approvals and Approve users", async () => {
     const user1 = users[0];
     const user2 = users[1];
@@ -317,6 +352,22 @@ describe("User functions", () => {
     expect(response.status).toEqual(200);
     expect(response.body.length).toEqual(1);
     expect(response.body[0].user_id).toEqual(user2.id);
+  });
+  it("Check notification for approved", async () => {
+    const user1 = users[0];
+    const user2 = users[1];
+    const token1 = tokenMap[user1.credentials.email];
+    const response = await request(app)
+      .get("/api/notifications")
+      .set({ ...headers, Authorization: `Bearer ${token1}` });
+    expect(response.status).toEqual(200);
+    expect(response.body.length).toEqual(1);
+    expect(response.body[0].content).toEqual(
+      `${user2.credentials.username} has approved your follow request`
+    );
+    expect(response.body[0].payload.username).toEqual(
+      user2.credentials.username
+    );
   });
   it("Create new post", async () => {
     const user2 = users[1];

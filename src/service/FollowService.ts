@@ -62,9 +62,9 @@ export const fetchFollowees = async (
 export const fetchPendingApproval = async (
   user_id: string,
   follow_id: string
-): Promise<{ is_approved: boolean; id: string } | null> => {
+): Promise<{ is_approved: boolean; id: string; user_id: string } | null> => {
   const queryResult = await postgres.query(
-    "SELECT id,is_approved from group_follow_approvals WHERE followee_id = $1 AND id = $2",
+    "SELECT id,is_approved,user_id from group_follow_approvals WHERE followee_id = $1 AND id = $2",
     [user_id, follow_id]
   );
   if (queryResult.rowCount == 0) {

@@ -6,6 +6,8 @@ const ROUTES = {
   FOLLOW: "/api/follow",
   USER: "/api/user",
   POST: "/api/post",
+  NOTIFICATIONS: "/api/notifications",
+  SETTINGS: "/api/settings",
 };
 
 export default ROUTES;
