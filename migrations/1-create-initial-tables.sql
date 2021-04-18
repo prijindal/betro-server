@@ -14,6 +14,8 @@ CREATE TABLE users (
     master_hash VARCHAR UNIQUE NOT NULL,
     key_id uuid NOT NULL,
     PRIMARY KEY (id),
+    UNIQUE(email),
+    UNIQUE(username),
     CONSTRAINT fk_rsa_key
       FOREIGN KEY(key_id) 
 	  REFERENCES user_rsa_keys(id)
