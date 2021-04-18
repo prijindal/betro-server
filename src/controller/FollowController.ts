@@ -71,7 +71,7 @@ export const getApprovals = async (
         if (rsa_key != null) {
           response.push({
             id: approval.id,
-            email: user.email,
+            username: user.username,
             follower_id: approval.user_id,
             public_key: rsa_key.public_key,
           });
@@ -103,7 +103,7 @@ export const getFollowers = async (
         response.push({
           user_id: follow.user_id,
           follow_id: follow.id,
-          email: follower.email,
+          username: follower.username,
           group_id: group.id,
           group_name: group.name,
           group_is_default: group.is_default,
@@ -133,7 +133,7 @@ export const getFollowees = async (
         response.push({
           user_id: follow.followee_id,
           follow_id: follow.id,
-          email: followee.email,
+          username: followee.username,
           is_approved: follow.is_approved,
         });
       }

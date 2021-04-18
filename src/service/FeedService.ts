@@ -24,7 +24,7 @@ export const postProcessPosts = async (
     const user = users.find((a) => a.id == post.user_id);
     if (user != null) {
       posts_users[user.id] = {
-        email: user.email,
+        username: user.username,
       };
     }
   });

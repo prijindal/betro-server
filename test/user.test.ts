@@ -26,6 +26,7 @@ import {
 
 interface GeneratedUser {
   credentials: {
+    username: string;
     email: string;
     master_hash: string;
   };
@@ -53,6 +54,15 @@ const generateUsers = async (n: number = 2): Promise<Array<GeneratedUser>> => {
     ) {
       email = faker.internet.email();
     }
+    let username = faker.internet.userName();
+    while (
+      includes(
+        users.map((a) => a.credentials.username),
+        username
+      )
+    ) {
+      username = faker.internet.userName();
+    }
     const password = faker.internet.password();
     const masterKey = await getMasterKey(email, password);
     const master_hash = await getMasterHash(masterKey, password);
@@ -61,6 +71,7 @@ const generateUsers = async (n: number = 2): Promise<Array<GeneratedUser>> => {
     );
     users.push({
       credentials: {
+        username: username,
         email: email,
         master_hash: master_hash,
       },
@@ -89,10 +100,21 @@ describe("User functions", () => {
     app = await initServer();
     users = await generateUsers();
   });
-  it("Check availability", async () => {
+  it("Check email availability", async () => {
     for await (const user of users) {
       const response = await request(app)
-        .get(`/api/register/available?email=${user.credentials.email}`)
+        .get(`/api/register/available/email?email=${user.credentials.email}`)
+        .set(headers);
+      expect(response.status).toEqual(200);
+      expect(response.body.available).toEqual(true);
+    }
+  });
+  it("Check username availability", async () => {
+    for await (const user of users) {
+      const response = await request(app)
+        .get(
+          `/api/register/available/username?username=${user.credentials.username}`
+        )
         .set(headers);
       expect(response.status).toEqual(200);
       expect(response.body.available).toEqual(true);
@@ -316,7 +338,7 @@ describe("User functions", () => {
       .get(`/api/user/${user2.id}`)
       .set({ ...headers, Authorization: `Bearer ${token1}` });
     expect(response.status).toEqual(200);
-    expect(response.body.email).toEqual(user2.credentials.email);
+    expect(response.body.username).toEqual(user2.credentials.username);
   });
   it("Fetches user posts", async () => {
     const user1 = users[0];
@@ -331,8 +353,8 @@ describe("User functions", () => {
     const posts: Array<PostResponse> = body.posts;
     const keys = body.keys;
     const userresponse = body.users;
-    expect(userresponse[posts[0].user_id].email).toEqual(
-      user2.credentials.email
+    expect(userresponse[posts[0].user_id].username).toEqual(
+      user2.credentials.username
     );
     const sym_key = keys[posts[0].key_id];
     const priv_key = await aesDecrypt(

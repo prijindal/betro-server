@@ -6,6 +6,7 @@ import jsonwebtoken from "jsonwebtoken";
 import { errorResponse } from "../util/responseHandler";
 import {
   isEmailAvailable,
+  isUsernameAvailable,
   RegisterBody,
   createUser,
 } from "../service/RegisterService";
@@ -15,11 +16,28 @@ import {
   createAccessToken,
 } from "../service/LoginService";
 import { SECRET } from "../config";
-import { userEmail } from "../service/AccountService";
 import { createRsaKeyPair, getRsaKeys } from "../service/KeyService";
 import { fetchUsers } from "../service/UserService";
 
-export const availableUser = async (
+export const availableUsername = async (
+  req: Request<null, null, null, { username: string }>,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const queryResult = await isUsernameAvailable(req.query.username);
+    if (queryResult) {
+      res.status(200).send({ available: true });
+    } else {
+      res.status(400).send(errorResponse(400, "Username is not available"));
+    }
+  } catch (e) {
+    res.status(503).send(errorResponse(503));
+    next(e);
+  }
+};
+
+export const availableEmail = async (
   req: Request<null, null, null, { email: string }>,
   res: Response,
   next: NextFunction
@@ -43,12 +61,16 @@ export const registerUser = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const queryResult = await isEmailAvailable(req.body.email);
-    if (queryResult) {
+    const emailAvailableResult = await isEmailAvailable(req.body.email);
+    const usernameAvailableResult = await isUsernameAvailable(
+      req.body.username
+    );
+    if (emailAvailableResult && usernameAvailableResult) {
       const public_key = req.body.public_key;
       const private_key = req.body.private_key;
       const key_id = await createRsaKeyPair(public_key, private_key);
       const response = await createUser(
+        req.body.username,
         req.body.email,
         req.body.master_hash,
         key_id
@@ -158,8 +180,14 @@ export const loginHelper = async (
 
 export const whoAmi = async (req: Request, res: Response): Promise<void> => {
   const user_id = res.locals.user_id;
-  const email = await userEmail(user_id);
-  res.status(200).send({ user_id, email });
+  const users = await fetchUsers([res.locals.user_id]);
+  if (users.length == 1) {
+    res
+      .status(200)
+      .send({ user_id, email: users[0].email, username: users[0].username });
+  } else {
+    res.status(503).send(errorResponse(503));
+  }
 };
 
 export const getKeys = async (req: Request, res: Response): Promise<void> => {

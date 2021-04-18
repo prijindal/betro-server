@@ -21,7 +21,7 @@ export const userProfile = async (
       const isFollowing = await checkFollow(own_id, user_id);
       res.status(200).send({
         id: users[0].id,
-        email: users[0].email,
+        username: users[0].username,
         is_following: isFollowing != null,
         is_approved: isFollowing != null && isFollowing.is_approved,
       });

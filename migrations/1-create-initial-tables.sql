@@ -10,6 +10,7 @@ CREATE TABLE user_rsa_keys (
 CREATE TABLE users (
     id uuid DEFAULT gen_random_uuid (),
     email VARCHAR NOT NULL,
+    username VARCHAR NOT NULL,
     master_hash VARCHAR UNIQUE NOT NULL,
     key_id uuid NOT NULL,
     PRIMARY KEY (id),

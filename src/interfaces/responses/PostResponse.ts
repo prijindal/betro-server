@@ -15,5 +15,5 @@ export interface PostResponse {
 }
 
 export interface PostUserResponse {
-  email: string;
+  username: string;
 }
