@@ -210,6 +210,24 @@ describe("User functions", () => {
     },
     10 * 1000
   );
+  it(
+    "Checks notification settings",
+    async () => {
+      for (const email in tokenMap) {
+        if (Object.prototype.hasOwnProperty.call(tokenMap, email)) {
+          const token = tokenMap[email];
+          const response = await request(app)
+            .get("/api/settings/notifications")
+            .set({ ...headers, Authorization: `Bearer ${token}` });
+          expect(response.status).toEqual(200);
+          expect(response.body.length).toEqual(2);
+          expect(response.body[0].action).toEqual("on_approved");
+          expect(response.body[0].enabled).toEqual(true);
+        }
+      }
+    },
+    10 * 1000
+  );
   it("Fetches user groups", async () => {
     for (const email in tokenMap) {
       if (Object.prototype.hasOwnProperty.call(tokenMap, email)) {
