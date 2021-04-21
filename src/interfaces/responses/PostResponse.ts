@@ -16,4 +16,8 @@ export interface PostResponse {
 
 export interface PostUserResponse {
   username: string;
+  first_name?: string;
+  last_name?: string;
+  profile_picture?: string;
+  sym_key?: string;
 }

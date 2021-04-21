@@ -11,6 +11,7 @@ const cleanAllTables = async () => {
     await client.query("DROP TABLE IF EXISTS posts;");
     await client.query("DROP TABLE IF EXISTS group_follow_approvals;");
     await client.query("DROP TABLE IF EXISTS group_policies;");
+    await client.query("DROP TABLE IF EXISTS user_profile;");
     await client.query("DROP TABLE IF EXISTS user_sym_keys;");
     await client.query("DROP TABLE IF EXISTS access_tokens;");
     await client.query("DROP TABLE IF EXISTS users;");

@@ -1,16 +1,11 @@
 import { Request, Response } from "express";
 import { fetchUserPosts } from "../service/PostService";
-import {
-  approveFollowRequest,
-  checkFollow,
-  createFollow,
-} from "../service/FollowService";
+import { checkFollow } from "../service/FollowService";
 import { fetchUserByUsername } from "../service/UserService";
 import { errorResponse } from "../util/responseHandler";
 import { PostsFeedResponse } from "../interfaces/responses/PostResponse";
 import { ErrorDataType } from "../constant/ErrorData";
 import { postProcessPosts } from "../service/FeedService";
-import { fetchUserGroups } from "../service/GroupService";
 
 export const userProfile = async (
   req: Request<{ username: string }>,

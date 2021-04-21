@@ -3,6 +3,7 @@ export interface FollowPostgres {
   is_approved: boolean;
   user_id: string;
   followee_id: string;
-  sym_key: string;
+  group_sym_key: string;
+  user_sym_key: string;
   group_id: string;
 }

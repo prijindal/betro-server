@@ -22,7 +22,7 @@ export async function initServer(): Promise<express.Express> {
 
   app.set("port", process.env.PORT || 4000);
   app.use(cors());
-  app.use(express.json());
+  app.use(express.json({ limit: "50mb" }));
 
   app.use(ROUTES.LOGIN, loginRateLimiter, loginRoutes);
   app.use(ROUTES.REGISTER, loginRateLimiter, registerRoutes);

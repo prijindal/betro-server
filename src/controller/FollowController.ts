@@ -169,7 +169,8 @@ export const approveUser = async (
 ): Promise<void> => {
   const user_id = res.locals.user_id;
   const follow_id = req.body.follow_id;
-  const sym_key = req.body.sym_key;
+  const group_sym_key = req.body.group_sym_key;
+  const user_sym_key = req.body.user_sym_key;
   const group_id = req.body.group_id;
   try {
     const approval = await fetchPendingApproval(user_id, follow_id);
@@ -187,7 +188,8 @@ export const approveUser = async (
             user_id,
             follow_id,
             group_id,
-            sym_key
+            group_sym_key,
+            user_sym_key
           );
           const users = await fetchUsers([user_id]);
           if (users.length == 1) {

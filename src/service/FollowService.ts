@@ -77,11 +77,13 @@ export const approveFollowRequest = async (
   user_id: string,
   follow_id: string,
   group_id: string,
-  sym_key: string
+  group_sym_key: string,
+  user_sym_key: string
 ): Promise<boolean> => {
   const queryResult = await postgres.query(
-    "UPDATE group_follow_approvals SET is_approved=true,group_id=$1,sym_key=$2 WHERE followee_id=$3 AND id=$4",
-    [group_id, sym_key, user_id, follow_id]
+    "UPDATE group_follow_approvals SET is_approved=true,group_id=$1,group_sym_key=$2,user_sym_key=$3 " +
+      " WHERE followee_id=$4 AND id=$5",
+    [group_id, group_sym_key, user_sym_key, user_id, follow_id]
   );
   return queryResult.rowCount == 1;
 };

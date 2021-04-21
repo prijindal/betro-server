@@ -16,8 +16,21 @@ import {
   createAccessToken,
 } from "../service/LoginService";
 import { SECRET } from "../config";
-import { createRsaKeyPair, getRsaKeys } from "../service/KeyService";
+import {
+  createRsaKeyPair,
+  createSymKey,
+  getRsaKeys,
+  getSymKeys,
+} from "../service/KeyService";
 import { fetchUsers } from "../service/UserService";
+import {
+  createProfile,
+  fetchProfile,
+  updateProfile,
+} from "../service/UserProfileService";
+import { ErrorDataType } from "../constant/ErrorData";
+import { UserProfileResponse } from "../interfaces/responses/UserProfileResponse";
+import { UserProfilePostgres } from "../interfaces/database/UserProfilePostgres";
 
 export const availableUsername = async (
   req: Request<null, null, null, { username: string }>,
@@ -205,6 +218,120 @@ export const getKeys = async (req: Request, res: Response): Promise<void> => {
       }
     }
   } catch (e) {
+    res.status(503).send(errorResponse(503));
+  }
+};
+
+export const getProfile = async (
+  req: Request,
+  res: Response<UserProfileResponse | ErrorDataType>
+): Promise<void> => {
+  const user_id = res.locals.user_id;
+  try {
+    const profile = await fetchProfile(user_id);
+    if (profile == null) {
+      res.status(404).send(errorResponse(404, "User Profile not found"));
+    } else {
+      const sym_key = await getSymKeys([profile.key_id]);
+      res.status(200).send({
+        first_name: profile.first_name,
+        last_name: profile.last_name,
+        profile_picture: profile.profile_picture,
+        sym_key: sym_key[profile.key_id],
+      });
+    }
+  } catch (e) {
+    res.status(503).send(errorResponse(503));
+  }
+};
+
+export const postProfile = async (
+  req: Request<
+    null,
+    null,
+    {
+      sym_key: string;
+      first_name: string;
+      last_name: string;
+      profile_picture: string;
+    }
+  >,
+  res: Response<UserProfileResponse | ErrorDataType>
+): Promise<void> => {
+  const user_id = res.locals.user_id;
+  try {
+    const profile = await fetchProfile(user_id);
+    if (profile == null) {
+      const key_id = await createSymKey(user_id, req.body.sym_key);
+      const updatedProfile = await createProfile(
+        user_id,
+        key_id,
+        req.body.first_name,
+        req.body.last_name,
+        req.body.profile_picture
+      );
+      const sym_key = await getSymKeys([updatedProfile.key_id]);
+      res.status(200).send({
+        first_name: updatedProfile.first_name,
+        last_name: updatedProfile.last_name,
+        profile_picture: updatedProfile.profile_picture,
+        sym_key: sym_key[updatedProfile.key_id],
+      });
+    } else {
+      res.status(404).send(errorResponse(404));
+    }
+  } catch (e) {
+    console.error(e);
+    res.status(503).send(errorResponse(503));
+  }
+};
+
+export const putProfile = async (
+  req: Request<
+    null,
+    null,
+    {
+      first_name?: string;
+      last_name?: string;
+      profile_picture?: string;
+    }
+  >,
+  res: Response<UserProfileResponse | ErrorDataType>
+): Promise<void> => {
+  const user_id = res.locals.user_id;
+  try {
+    const profile = await fetchProfile(user_id);
+    if (profile == null) {
+      res.status(404).send(errorResponse(404));
+    } else {
+      let first_name = req.body.first_name;
+      if (isEmpty(first_name)) {
+        first_name = profile.first_name;
+      }
+      let last_name = req.body.last_name;
+      if (isEmpty(last_name)) {
+        last_name = profile.last_name;
+      }
+      let profile_picture = req.body.profile_picture;
+      if (isEmpty(profile_picture)) {
+        profile_picture = profile.profile_picture;
+      }
+      const updatedProfile = await updateProfile(
+        profile.id,
+        first_name,
+        last_name,
+        profile_picture
+      );
+      const sym_key = await getSymKeys([updatedProfile.key_id]);
+      res.status(200).send({
+        first_name: updatedProfile.first_name,
+        last_name: updatedProfile.last_name,
+        profile_picture: updatedProfile.profile_picture,
+        sym_key: sym_key[updatedProfile.key_id],
+      });
+    }
+  } catch (e) {
+    console.error(e);
     res.status(503).send(errorResponse(503));
   }
 };

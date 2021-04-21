@@ -48,6 +48,24 @@ CREATE TABLE user_sym_keys (
     ON DELETE CASCADE
 );
 
+CREATE TABLE user_profile (
+  id uuid DEFAULT gen_random_uuid (),
+  user_id uuid NOT NULL,
+  key_id uuid NOT NULL,
+  first_name VARCHAR,
+  last_name VARCHAR,
+  profile_picture VARCHAR,
+  PRIMARY KEY (id),
+  CONSTRAINT fk_user
+    FOREIGN KEY(user_id) 
+  REFERENCES users(id)
+  ON DELETE CASCADE,
+  CONSTRAINT fk_sym_key
+      FOREIGN KEY(key_id) 
+	  REFERENCES user_sym_keys(id)
+    ON DELETE CASCADE
+);
+
 CREATE TABLE group_policies (
     id uuid DEFAULT gen_random_uuid (),
     user_id uuid NOT NULL,
@@ -69,7 +87,8 @@ CREATE TABLE group_follow_approvals (
     id uuid DEFAULT gen_random_uuid (),
     user_id uuid NOT NULL,
     followee_id uuid NOT NULL,/* This means user_id follows followee_id */
-    sym_key VARCHAR,
+    group_sym_key VARCHAR,
+    user_sym_key VARCHAR,
     group_id uuid,
     is_approved BOOLEAN DEFAULT FALSE,
     created_at timestamptz DEFAULT NOW(),

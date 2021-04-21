@@ -6,6 +6,7 @@ import {
 } from "../interfaces/responses/PostResponse";
 import { PostPostges } from "../interfaces/database/PostPostgres";
 import { FollowPostgres } from "../interfaces/database/FollowPostgres";
+import { fetchProfiles } from "./UserProfileService";
 
 export const postProcessPosts = async (
   own_id: string,
@@ -17,19 +18,26 @@ export const postProcessPosts = async (
   const group_ids = posts.map((a) => a.group_id);
   const user_ids = posts.map((a) => a.user_id);
   const users = await fetchUsers(user_ids);
+  const profiles = await fetchProfiles(user_ids);
   if (follows == null || follows.length == 0) {
     follows = await fetchUserGroupsFollows(own_id, group_ids);
   }
   posts.forEach((post) => {
     const follow = follows.find((a) => a.group_id == post.group_id);
     if (follow != null) {
-      keys[post.key_id] = follow.sym_key;
+      keys[post.key_id] = follow.group_sym_key;
     }
     const user = users.find((a) => a.id == post.user_id);
+    const profile = profiles.find((a) => a.user_id == post.user_id);
     if (user != null) {
-      posts_users[user.id] = {
-        username: user.username,
-      };
+      const userResponse: PostUserResponse = { username: user.username };
+      if (profile != null) {
+        userResponse.first_name = profile.first_name;
+        userResponse.last_name = profile.last_name;
+        userResponse.profile_picture = profile.profile_picture;
+        userResponse.sym_key = follow.user_sym_key;
+      }
+      posts_users[user.id] = userResponse;
     }
   });
   const feed: PostsFeedResponse = {
