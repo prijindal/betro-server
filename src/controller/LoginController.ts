@@ -30,7 +30,7 @@ import {
 } from "../service/UserProfileService";
 import { ErrorDataType } from "../constant/ErrorData";
 import { UserProfileResponse } from "../interfaces/responses/UserProfileResponse";
-import { UserProfilePostgres } from "../interfaces/database/UserProfilePostgres";
+import { WhoAmiResponse } from "../interfaces/responses/WhoAmiResponse";
 
 export const availableUsername = async (
   req: Request<null, null, null, { username: string }>,
@@ -191,19 +191,38 @@ export const loginHelper = async (
   return { token, device_id };
 };
 
-export const whoAmi = async (req: Request, res: Response): Promise<void> => {
+export const whoAmi = async (
+  req: Request,
+  res: Response<WhoAmiResponse | ErrorDataType>
+): Promise<void> => {
   const user_id = res.locals.user_id;
   const users = await fetchUsers([res.locals.user_id]);
   if (users.length == 1) {
-    res
-      .status(200)
-      .send({ user_id, email: users[0].email, username: users[0].username });
+    const keys = await getRsaKeys([users[0].key_id], true);
+    if (keys.length == 1) {
+      const response: WhoAmiResponse = {
+        user_id,
+        email: users[0].email,
+        username: users[0].username,
+      };
+      const profile = await fetchProfile(user_id, false);
+      if (profile != null) {
+        response.first_name = profile.first_name;
+        response.last_name = profile.last_name;
+      }
+      res.status(200).send(response);
+    } else {
+      res.status(503).send(errorResponse(503));
+    }
   } else {
     res.status(503).send(errorResponse(503));
   }
 };
 
-export const getKeys = async (req: Request, res: Response): Promise<void> => {
+export const getKeys = async (
+  req: Request,
+  res: Response<{ private_key: string; sym_key?: string } | ErrorDataType>
+): Promise<void> => {
   const user_id = res.locals.user_id;
   try {
     const users = await fetchUsers([user_id]);
@@ -214,8 +233,33 @@ export const getKeys = async (req: Request, res: Response): Promise<void> => {
       if (keys.length == 0) {
         res.status(500).send(errorResponse(500));
       } else {
-        res.status(200).send({ private_key: keys[0].private_key });
+        const response: { private_key: string; sym_key?: string } = {
+          private_key: keys[0].private_key,
+        };
+        const profile = await fetchProfile(user_id, false);
+        if (profile != null) {
+          const sym_keys = await getSymKeys([profile.key_id]);
+          response.sym_key = sym_keys[profile.key_id];
+        }
+        res.status(200).send(response);
       }
+    }
+  } catch (e) {
+    res.status(503).send(errorResponse(503));
+  }
+};
+
+export const getProfilePicture = async (
+  req: Request,
+  res: Response<string | ErrorDataType>
+): Promise<void> => {
+  const user_id = res.locals.user_id;
+  try {
+    const profile = await fetchProfile(user_id);
+    if (profile == null) {
+      res.status(404).send(errorResponse(404, "User Profile not found"));
+    } else {
+      res.status(200).send(profile.profile_picture);
     }
   } catch (e) {
     res.status(503).send(errorResponse(503));

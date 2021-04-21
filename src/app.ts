@@ -1,5 +1,7 @@
 import express from "express";
 import cors from "cors";
+import compression from "compression";
+import helmet from "helmet";
 import postgres from "./db/postgres";
 import ROUTES from "./constant/Routes";
 
@@ -21,7 +23,10 @@ export async function initServer(): Promise<express.Express> {
   app.set("trust proxy", 1);
 
   app.set("port", process.env.PORT || 4000);
+  app.disable("x-powered-by");
+  app.use(helmet());
   app.use(cors());
+  app.use(compression());
   app.use(express.json({ limit: "50mb" }));
 
   app.use(ROUTES.LOGIN, loginRateLimiter, loginRoutes);

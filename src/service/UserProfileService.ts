@@ -12,10 +12,13 @@ export const fetchProfiles = async (
 };
 
 export const fetchProfile = async (
-  user_id: string
+  user_id: string,
+  include_profile_picture: boolean = true
 ): Promise<UserProfilePostgres | null> => {
   const queryResult = await postgres.query(
-    "SELECT * FROM user_profile WHERE user_id=$1",
+    `SELECT id, user_id, key_id, first_name, last_name ${
+      include_profile_picture ? ", profile_picture" : ""
+    } FROM user_profile WHERE user_id=$1`,
     [user_id]
   );
   if (queryResult.rowCount == 0) {
