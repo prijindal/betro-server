@@ -10,7 +10,7 @@ export const authAccesstoken = async (
   next: NextFunction
 ): Promise<Response> => {
   const authorization = req.headers.authorization;
-  if (!authorization.startsWith("Bearer")) {
+  if (!authorization || !authorization.startsWith("Bearer")) {
     next("Invalid jwt token");
     return res
       .status(401)

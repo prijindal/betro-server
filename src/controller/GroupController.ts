@@ -10,6 +10,7 @@ import { errorResponse } from "../util/responseHandler";
 import { ErrorDataType } from "../constant/ErrorData";
 import { GroupResponse } from "../interfaces/responses/GroupResponse";
 import { GroupCreateRequest } from "../interfaces/requests/GroupCreateRequest";
+import { fetchUserTableCount } from "../service/helper";
 
 export const getGroups = async (
   req: Request,
@@ -41,20 +42,25 @@ export const postGroup = async (
 ): Promise<void> => {
   const user_id = res.locals.user_id;
   try {
-    const key_id = await createSymKey(user_id, req.body.sym_key);
-    const group = await createGroup(
-      user_id,
-      key_id,
-      req.body.name,
-      req.body.is_default
-    );
-    const sym_keys = await getSymKeys([group.key_id]);
-    res.status(200).send({
-      id: group.id,
-      sym_key: sym_keys[key_id],
-      name: group.name,
-      is_default: group.is_default,
-    });
+    const groupsCount = await fetchUserTableCount(user_id, "group_policies");
+    if (groupsCount >= 20) {
+      res.status(404).send(errorResponse(404, "Group limit reached"));
+    } else {
+      const key_id = await createSymKey(user_id, req.body.sym_key);
+      const group = await createGroup(
+        user_id,
+        key_id,
+        req.body.name,
+        req.body.is_default
+      );
+      const sym_keys = await getSymKeys([group.key_id]);
+      res.status(200).send({
+        id: group.id,
+        sym_key: sym_keys[key_id],
+        name: group.name,
+        is_default: group.is_default,
+      });
+    }
   } catch (e) {
     res.status(503).send(errorResponse(503));
   }

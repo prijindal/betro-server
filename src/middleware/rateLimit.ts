@@ -10,10 +10,10 @@ export const userRateLimiter = rateLimit({
     prefix: "user_limiter_",
   }),
   windowMs: 5 * 60 * 1000,
-  max: 100,
+  max: 1000,
   message: errorResponse(429),
-  keyGenerator: (req: Request) => {
-    return req.headers.authorization + req.ip;
+  keyGenerator: (req: Request, res: Response) => {
+    return res.locals.user_id;
   },
 });
 

@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
-import { createRsaKeyPair, getRsaKeys } from "../service/KeyService";
+import { isEmpty } from "lodash";
+import { getRsaKeys } from "../service/KeyService";
 import {
   approveFollowRequest,
   checkFollow,
@@ -8,6 +9,7 @@ import {
   fetchFollowers,
   fetchPendingApproval,
   fetchPendingApprovals,
+  fetchPendingApprovalsCount,
 } from "../service/FollowService";
 import { errorResponse } from "../util/responseHandler";
 import { ErrorDataType } from "../constant/ErrorData";
@@ -21,6 +23,8 @@ import { fetchUserByUsername, fetchUsers } from "../service/UserService";
 import { FolloweeResponse } from "../interfaces/responses/FolloweeResponse";
 import { createUserNotification } from "../service/NotificationService";
 import { checkUserNotificationSetting } from "../service/SettingsService";
+import { PaginatedResponse } from "../interfaces/responses/PaginatedResponse";
+import { FollowPostgres } from "../interfaces/database/FollowPostgres";
 
 export const followUser = async (
   req: Request<null, null, FollowRequest>,
@@ -71,12 +75,36 @@ export const followUser = async (
 };
 
 export const getApprovals = async (
-  req: Request,
-  res: Response<Array<ApprovalResponse> | ErrorDataType>
+  req: Request<null, null, null, { after: Date; limit: string }>,
+  res: Response<PaginatedResponse<ApprovalResponse> | ErrorDataType>
 ): Promise<void> => {
   const user_id = res.locals.user_id;
   try {
-    const approvals = await fetchPendingApprovals(user_id);
+    const approvalCount = await fetchPendingApprovalsCount(user_id);
+    let limit = 50;
+    try {
+      limit = parseInt(req.query.limit, 10);
+    } catch (e) {
+      limit = 50;
+    } finally {
+      if (isNaN(limit)) {
+        limit = 50;
+      }
+    }
+    let approvals: FollowPostgres[] = [];
+    if (req.query.after != null && !isEmpty(req.query.after)) {
+      try {
+        approvals = await fetchPendingApprovals(
+          user_id,
+          limit,
+          req.query.after
+        );
+      } catch (e) {
+        approvals = await fetchPendingApprovals(user_id, limit);
+      }
+    } else {
+      approvals = await fetchPendingApprovals(user_id, limit);
+    }
     const user_ids = approvals.map((a) => a.user_id);
     const users = await fetchUsers(user_ids);
     const key_ids = users.map((a) => a.key_id);
@@ -92,12 +120,30 @@ export const getApprovals = async (
             username: user.username,
             follower_id: approval.user_id,
             public_key: rsa_key.public_key,
+            created_at: approval.created_at,
           });
         }
       }
     });
-    res.status(200).send(response);
+    let after = null;
+    if (response.length > 0) {
+      after = response[response.length - 1].created_at;
+    }
+    let approvalCountAfter: number;
+    try {
+      approvalCountAfter = await fetchPendingApprovalsCount(user_id, after);
+    } catch (e) {
+      approvalCountAfter = await fetchPendingApprovalsCount(user_id);
+    }
+    res.status(200).send({
+      data: response,
+      limit,
+      total: approvalCount,
+      after: approvalCountAfter != 0 ? after : null,
+      next: approvalCountAfter != 0,
+    });
   } catch (e) {
+    console.error(e);
     res.status(503).send(errorResponse(503));
   }
 };
