@@ -440,9 +440,9 @@ describe("User functions", () => {
       .get("/api/follow/approvals")
       .set({ ...headers, Authorization: `Bearer ${token2}` });
     expect(response.status).toEqual(200);
-    expect(response.body.length).toEqual(1);
-    expect(response.body[0].follower_id).toEqual(user1.id);
-    const publicKey = response.body[0].public_key;
+    expect(response.body.data.length).toEqual(1);
+    expect(response.body.data[0].follower_id).toEqual(user1.id);
+    const publicKey = response.body.data[0].public_key;
     const groupSymKey = user2.keys.groupSymKey;
     const groupSymKeyEncrypted = await rsaEncrypt(
       publicKey,
@@ -457,7 +457,7 @@ describe("User functions", () => {
       .post("/api/follow/approve")
       .set({ ...headers, Authorization: `Bearer ${token2}` })
       .send({
-        follow_id: response.body[0].id,
+        follow_id: response.body.data[0].id,
         group_sym_key: groupSymKeyEncrypted,
         user_sym_key: userSymKeyEncrypted,
         group_id: user2.groups[0].id,
