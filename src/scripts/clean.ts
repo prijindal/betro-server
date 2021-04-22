@@ -1,4 +1,4 @@
-import pool from "../src/db/postgres";
+import pool from "../db/postgres";
 
 const cleanAllTables = async () => {
   const client = await pool.connect();

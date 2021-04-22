@@ -1,5 +1,5 @@
 import { migrate, loadMigrationFiles } from "postgres-migrations";
-import pool from "../src/db/postgres";
+import pool from "../db/postgres";
 
 const runMigration = async () => {
   await pool.connect();
