@@ -29,7 +29,6 @@
   "license": "ISC",
   "dependencies": {
     "axios": "^0.21.1",
-    "betro-js-lib": "git+https://prijindal@github.com/betro-app/betro-js-lib.git#c867c9f81c7c609d69997a60c34e0d292af3a2d4",
     "compression": "^1.7.4",
     "cors": "^2.8.5",
     "dotenv": "^8.2.0",
@@ -69,6 +68,7 @@
     "@types/uuid": "^8.3.0",
     "@typescript-eslint/eslint-plugin": "^4.22.0",
     "@typescript-eslint/parser": "^4.22.0",
+    "betro-js-lib": "git+https://prijindal@github.com/betro-app/betro-js-lib.git#1abca06c720c0c7962f1477e638043b69d73c8fa",
     "concurrently": "^6.0.2",
     "eslint": "^7.24.0",
     "eslint-config-prettier": "^8.2.0",
