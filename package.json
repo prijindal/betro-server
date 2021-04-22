@@ -29,7 +29,7 @@
   "license": "ISC",
   "dependencies": {
     "axios": "^0.21.1",
-    "betro-js-lib": "https://github.com/betro-app/betro-js-lib.git#c867c9f81c7c609d69997a60c34e0d292af3a2d4",
+    "betro-js-lib": "git+https://prijindal@github.com/betro-app/betro-js-lib.git#c867c9f81c7c609d69997a60c34e0d292af3a2d4",
     "compression": "^1.7.4",
     "cors": "^2.8.5",
     "dotenv": "^8.2.0",
