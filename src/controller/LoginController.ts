@@ -31,6 +31,13 @@ import {
 import { ErrorDataType } from "../constant/ErrorData";
 import { UserProfileResponse } from "../interfaces/responses/UserProfileResponse";
 import { WhoAmiResponse } from "../interfaces/responses/WhoAmiResponse";
+import { CountResponse } from "../interfaces/responses/CountResponse";
+import { fetchUserTableCount } from "../service/helper";
+import { CountIncludeType } from "../interfaces/requests/CountRequest";
+import {
+  fetchFollowerCount,
+  fetchPendingApprovalsCount,
+} from "../service/FollowService";
 
 export const availableUsername = async (
   req: Request<null, null, null, { username: string }>,
@@ -375,7 +382,55 @@ export const putProfile = async (
       });
     }
   } catch (e) {
-    console.error(e);
+    res.status(503).send(errorResponse(503));
+  }
+};
+
+export const fetchCounts = async (
+  req: Request<
+    null,
+    null,
+    null,
+    {
+      include_fields: string;
+    }
+  >,
+  res: Response<CountResponse | ErrorDataType>
+): Promise<void> => {
+  const user_id = res.locals.user_id;
+  try {
+    const response: CountResponse = {};
+    const includeFieldsString = req.query.include_fields;
+    const include_fields: Array<CountIncludeType> = includeFieldsString.split(
+      ","
+    ) as Array<CountIncludeType>;
+    const tableMapping: { [k: string]: string } = {
+      notifications: "user_notifications",
+      notificationSettings: "settings_notifications",
+      groups: "group_policies",
+      followees: "group_follow_approvals",
+      posts: "posts",
+    };
+    const promises: Array<Promise<number>> = [];
+    for (const include_field of include_fields) {
+      if (include_field == "followers") {
+        promises.push(fetchFollowerCount(user_id));
+      } else if (include_field == "approvals") {
+        promises.push(fetchPendingApprovalsCount(user_id));
+      } else {
+        const table = tableMapping[include_field];
+        if (table != null) {
+          promises.push(fetchUserTableCount(user_id, table));
+        }
+      }
+    }
+    const resp = await Promise.all(promises);
+    for (let index = 0; index < include_fields.length; index++) {
+      const include_field = include_fields[index];
+      response[include_field] = resp[index];
+    }
+    res.status(200).send(response);
+  } catch (e) {
     res.status(503).send(errorResponse(503));
   }
 };

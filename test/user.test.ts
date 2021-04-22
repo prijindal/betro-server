@@ -588,6 +588,33 @@ describe("User functions", () => {
       }
     }
   });
+  it("Checks count", async () => {
+    const include_fields = [
+      "notifications",
+      "notificationSettings",
+      "groups",
+      "followers",
+      "followees",
+      "approvals",
+      "posts",
+    ];
+    for (const email in tokenMap) {
+      if (Object.prototype.hasOwnProperty.call(tokenMap, email)) {
+        const token = tokenMap[email];
+        const response = await request(app)
+          .get(`/api/account/count?include_fields=${include_fields.join(",")}`)
+          .set({ ...headers, Authorization: `Bearer ${token}` });
+        expect(response.status).toEqual(200);
+        expect(response.body.notifications).toEqual(1);
+        expect(response.body.notificationSettings).toEqual(2);
+        expect(response.body.groups).toEqual(0);
+        expect(response.body.followers).toEqual(0);
+        expect(response.body.followees).toEqual(0);
+        expect(response.body.approvals).toEqual(0);
+        expect(response.body.posts).toEqual(0);
+      }
+    }
+  });
   afterAll(async () => {
     for await (const user of users) {
       await deleteUser(user);

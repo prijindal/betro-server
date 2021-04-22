@@ -8,6 +8,7 @@ import {
   getProfile,
   postProfile,
   putProfile,
+  fetchCounts,
 } from "../controller/LoginController";
 import { validateRequest } from "../middleware/validateRequest";
 
@@ -24,5 +25,6 @@ router.post(
   postProfile
 );
 router.put("/profile", putProfile);
+router.get("/count", fetchCounts);
 
 export default router;

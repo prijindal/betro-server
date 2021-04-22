@@ -29,6 +29,16 @@ export const createFollow = async (
   return queryResult.rows[0];
 };
 
+export const fetchPendingApprovalsCount = async (
+  user_id: string
+): Promise<number> => {
+  const queryResult = await postgres.query(
+    "SELECT count(*) FROM group_follow_approvals WHERE followee_id=$1 AND is_approved=false",
+    [user_id]
+  );
+  return parseInt(queryResult.rows[0].count, 10);
+};
+
 export const fetchPendingApprovals = async (
   user_id: string
 ): Promise<Array<FollowPostgres>> => {
@@ -37,6 +47,14 @@ export const fetchPendingApprovals = async (
     [user_id]
   );
   return queryResult.rows;
+};
+
+export const fetchFollowerCount = async (user_id: string): Promise<number> => {
+  const queryResult = await postgres.query(
+    "SELECT count(*) FROM group_follow_approvals WHERE followee_id=$1 AND is_approved=true",
+    [user_id]
+  );
+  return parseInt(queryResult.rows[0].count, 10);
 };
 
 export const fetchFollowers = async (
