@@ -32,12 +32,9 @@ import { ErrorDataType } from "../constant/ErrorData";
 import { UserProfileResponse } from "../interfaces/responses/UserProfileResponse";
 import { WhoAmiResponse } from "../interfaces/responses/WhoAmiResponse";
 import { CountResponse } from "../interfaces/responses/CountResponse";
-import { fetchUserTableCount } from "../service/helper";
 import { CountIncludeType } from "../interfaces/requests/CountRequest";
-import {
-  fetchFollowerCount,
-  fetchPendingApprovalsCount,
-} from "../service/FollowService";
+import { tableCount } from "../service/helper";
+import { FollowPostgres } from "../interfaces/database/FollowPostgres";
 
 export const availableUsername = async (
   req: Request<null, null, null, { username: string }>,
@@ -414,13 +411,25 @@ export const fetchCounts = async (
     const promises: Array<Promise<number>> = [];
     for (const include_field of include_fields) {
       if (include_field == "followers") {
-        promises.push(fetchFollowerCount(user_id));
+        promises.push(
+          tableCount<FollowPostgres>("group_follow_approvals", {
+            followee_id: user_id,
+            is_approved: true,
+          })
+        );
       } else if (include_field == "approvals") {
-        promises.push(fetchPendingApprovalsCount(user_id));
+        promises.push(
+          tableCount<FollowPostgres>("group_follow_approvals", {
+            followee_id: user_id,
+            is_approved: false,
+          })
+        );
       } else {
         const table = tableMapping[include_field];
         if (table != null) {
-          promises.push(fetchUserTableCount(user_id, table));
+          promises.push(
+            tableCount<{ user_id: string; id: string }>(table, { user_id })
+          );
         }
       }
     }

@@ -1,4 +1,4 @@
-import { fetchUserGroupsFollows } from "../service/FollowService";
+import postgres from "../db/postgres";
 import { fetchUsers } from "../service/UserService";
 import {
   PostUserResponse,
@@ -20,7 +20,9 @@ export const postProcessPosts = async (
   const users = await fetchUsers(user_ids);
   const profiles = await fetchProfiles(user_ids);
   if (follows == null || follows.length == 0) {
-    follows = await fetchUserGroupsFollows(own_id, group_ids);
+    follows = await postgres<FollowPostgres>("group_follow_approvals")
+      .whereIn("group_id", group_ids)
+      .andWhere({ user_id: own_id });
   }
   posts.forEach((post) => {
     const follow = follows.find((a) => a.group_id == post.group_id);

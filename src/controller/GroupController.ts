@@ -10,7 +10,8 @@ import { errorResponse } from "../util/responseHandler";
 import { ErrorDataType } from "../constant/ErrorData";
 import { GroupResponse } from "../interfaces/responses/GroupResponse";
 import { GroupCreateRequest } from "../interfaces/requests/GroupCreateRequest";
-import { fetchUserTableCount } from "../service/helper";
+import { tableCount } from "../service/helper";
+import { GroupPostgres } from "../interfaces/database/GroupPostgres";
 
 export const getGroups = async (
   req: Request,
@@ -42,7 +43,9 @@ export const postGroup = async (
 ): Promise<void> => {
   const user_id = res.locals.user_id;
   try {
-    const groupsCount = await fetchUserTableCount(user_id, "group_policies");
+    const groupsCount = await tableCount<GroupPostgres>("group_policies", {
+      user_id,
+    });
     if (groupsCount >= 20) {
       res.status(404).send(errorResponse(404, "Group limit reached"));
     } else {

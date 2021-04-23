@@ -1,20 +1,26 @@
 import { isEmpty } from "lodash";
+import { Knex } from "knex";
 import postgres from "../db/postgres";
 
-export const fetchUserTableCount = async (
-  user_id: string,
-  table: string
+export const tableCount = async <T extends { id: string }>(
+  table: string,
+  where: Knex.DbRecord<Knex.ResolveTableType<T>>
 ): Promise<number> => {
-  const queryResult = await postgres(table)
-    .where({ user_id })
+  const queryResult = await postgres<T>(table)
+    .where(where)
     .count<Array<Record<"count", string>>>("id");
-  return parseInt(queryResult[0].count, 10);
+  try {
+    return parseInt(queryResult[0].count, 10);
+  } catch (e) {
+    return 0;
+  }
 };
 
-export const UserPaginationWrapper = async <T extends { created_at: Date }>(
-  fetchApi: (user_id: string, limit: number, after?: Date) => Promise<Array<T>>,
-  fetchCountApi: (user_id: string, after?: Date) => Promise<number>,
-  user_id: string,
+export const UserPaginationWrapper = async <
+  T extends { id: string; created_at: Date }
+>(
+  table: string,
+  where: Knex.DbRecord<Knex.ResolveTableType<T>>,
   limitStr: string,
   after: string
 ): Promise<{
@@ -24,7 +30,7 @@ export const UserPaginationWrapper = async <T extends { created_at: Date }>(
   after: Date;
   next: boolean;
 }> => {
-  const totalCount = await fetchCountApi(user_id);
+  const totalCount = await tableCount<T>(table, where);
   let limit = 50;
   try {
     limit = parseInt(limitStr, 10);
@@ -36,25 +42,25 @@ export const UserPaginationWrapper = async <T extends { created_at: Date }>(
     }
   }
   let response: Array<T> = [];
+  const responseQuery: Knex.QueryBuilder<T> = postgres<T>(table)
+    .select("*")
+    .where(where);
   if (after != null && !isEmpty(after)) {
-    try {
-      response = await fetchApi(user_id, limit, new Date(after));
-    } catch (e) {
-      response = await fetchApi(user_id, limit);
-    }
-  } else {
-    response = await fetchApi(user_id, limit);
+    responseQuery.where("created_at", "<", after);
   }
+  response = await responseQuery;
   let afterCursor = null;
   if (response.length > 0) {
     afterCursor = response[response.length - 1].created_at;
   }
-  let countAfter: number;
-  try {
-    countAfter = await fetchCountApi(user_id, afterCursor);
-  } catch (e) {
-    countAfter = await fetchCountApi(user_id);
+  const countAfterQuery = postgres<T>(table)
+    .count<Array<Record<"count", string>>>("id")
+    .where(where);
+  if (after != null && !isEmpty(after)) {
+    countAfterQuery.where("created_at", "<", after);
   }
+  const countAfterResponse = await countAfterQuery;
+  const countAfter = parseInt(countAfterResponse[0].count, 10);
   return {
     data: response,
     limit,

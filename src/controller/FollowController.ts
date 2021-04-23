@@ -1,17 +1,6 @@
 import { Request, Response } from "express";
+import postgres from "../db/postgres";
 import { getRsaKeys } from "../service/KeyService";
-import {
-  approveFollowRequest,
-  checkFollow,
-  createFollow,
-  fetchFollowees,
-  fetchFolloweesCount,
-  fetchFollowerCount,
-  fetchFollowers,
-  fetchPendingApproval,
-  fetchPendingApprovals,
-  fetchPendingApprovalsCount,
-} from "../service/FollowService";
 import { errorResponse } from "../util/responseHandler";
 import { ErrorDataType } from "../constant/ErrorData";
 import { FollowRequest } from "../interfaces/requests/FollowRequest";
@@ -20,13 +9,14 @@ import { ApprovalResponse } from "../interfaces/responses/ApprovalResponse";
 import { ApproveRequest } from "../interfaces/requests/ApproveRequest";
 import { fetchGroups, fetchUserGroup } from "../service/GroupService";
 import { FollowerResponse } from "../interfaces/responses/FollowerResponse";
-import { fetchUserByUsername, fetchUsers } from "../service/UserService";
+import { fetchUsers } from "../service/UserService";
 import { FolloweeResponse } from "../interfaces/responses/FolloweeResponse";
 import { createUserNotification } from "../service/NotificationService";
 import { checkUserNotificationSetting } from "../service/SettingsService";
 import { PaginatedResponse } from "../interfaces/responses/PaginatedResponse";
 import { FollowPostgres } from "../interfaces/database/FollowPostgres";
 import { UserPaginationWrapper } from "../service/helper";
+import { UserPostgres } from "../interfaces/database/UserPostgres";
 
 export const followUser = async (
   req: Request<null, null, FollowRequest>,
@@ -35,11 +25,19 @@ export const followUser = async (
   const user_id = res.locals.user_id;
   const followee_username = req.body.followee_username;
   try {
-    const followeeUser = await fetchUserByUsername(followee_username);
+    const followeeUser = await postgres<UserPostgres>("users")
+      .select("*")
+      .where({ username: followee_username })
+      .first();
     if (followeeUser == null) {
       res.status(404).send(errorResponse(404, "User does not exist"));
     } else {
-      const isFollowing = await checkFollow(user_id, followeeUser.id);
+      const isFollowing = await postgres<FollowPostgres>(
+        "group_follow_approvals"
+      )
+        .select("is_approved")
+        .where({ user_id, followee_id: followeeUser.id })
+        .first();
       if (isFollowing != null) {
         if (isFollowing.is_approved) {
           res.status(411).send(errorResponse(411, "Already Following"));
@@ -47,7 +45,12 @@ export const followUser = async (
           res.status(411).send(errorResponse(411, "Waiting for approval"));
         }
       } else {
-        const followResponse = await createFollow(user_id, followeeUser.id);
+        const followResponse = await postgres<FollowPostgres>(
+          "group_follow_approvals"
+        ).insert({ user_id, followee_id: followeeUser.id }, "*");
+        if (followResponse.length == 0) {
+          throw new Error();
+        }
         const users = await fetchUsers([user_id]);
         if (users.length == 1) {
           const user = users[0];
@@ -65,8 +68,8 @@ export const followUser = async (
           }
         }
         res.status(200).send({
-          is_approved: followResponse.is_approved,
-          id: followResponse.user_id,
+          is_approved: followResponse[0].is_approved,
+          id: followResponse[0].user_id,
         });
       }
     }
@@ -89,9 +92,8 @@ export const getApprovals = async (
       total,
       next,
     } = await UserPaginationWrapper<FollowPostgres>(
-      fetchPendingApprovals,
-      fetchPendingApprovalsCount,
-      user_id,
+      "group_follow_approvals",
+      { followee_id: user_id, is_approved: false },
       req.query.limit,
       req.query.after
     );
@@ -141,9 +143,8 @@ export const getFollowers = async (
       total,
       next,
     } = await UserPaginationWrapper<FollowPostgres>(
-      fetchFollowers,
-      fetchFollowerCount,
-      user_id,
+      "group_follow_approvals",
+      { followee_id: user_id, is_approved: true },
       req.query.limit,
       req.query.after
     );
@@ -186,9 +187,8 @@ export const getFollowees = async (
       total,
       next,
     } = await UserPaginationWrapper<FollowPostgres>(
-      fetchFollowees,
-      fetchFolloweesCount,
-      user_id,
+      "group_follow_approvals",
+      { user_id },
       req.query.limit,
       req.query.after
     );
@@ -223,7 +223,10 @@ export const approveUser = async (
   const user_sym_key = req.body.user_sym_key;
   const group_id = req.body.group_id;
   try {
-    const approval = await fetchPendingApproval(user_id, follow_id);
+    const approval = await postgres<FollowPostgres>("group_follow_approvals")
+      .where({ followee_id: user_id, id: follow_id })
+      .select("id", "is_approved", "user_id")
+      .first();
     if (approval == null) {
       res.status(404).send(errorResponse(404, "No follow like this"));
     } else {
@@ -234,13 +237,16 @@ export const approveUser = async (
         if (group == null) {
           res.status(404).send(errorResponse(404, "Group not found"));
         } else {
-          const approved = await approveFollowRequest(
-            user_id,
-            follow_id,
-            group_id,
-            group_sym_key,
-            user_sym_key
-          );
+          const approved = await postgres<FollowPostgres>(
+            "group_follow_approvals"
+          )
+            .where({ followee_id: user_id, id: follow_id })
+            .update({
+              is_approved: true,
+              group_id,
+              group_sym_key,
+              user_sym_key,
+            });
           const users = await fetchUsers([user_id]);
           if (users.length == 1) {
             const user = users[0];
@@ -257,7 +263,7 @@ export const approveUser = async (
               );
             }
           }
-          res.status(200).send({ approved });
+          res.status(200).send({ approved: approved === 1 });
         }
       }
     }
