@@ -62,6 +62,7 @@ export const postGroup = async (
       });
     }
   } catch (e) {
+    console.error(e);
     res.status(503).send(errorResponse(503));
   }
 };

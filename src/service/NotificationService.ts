@@ -5,11 +5,9 @@ import { NotificationSettingsAction } from "../interfaces/database/NotificationS
 export const fetchUserNotifications = async (
   user_id: string
 ): Promise<Array<UserNotification>> => {
-  const queryResult = await postgres.query(
-    "SELECT * FROM user_notifications WHERE user_id=$1",
-    [user_id]
-  );
-  return queryResult.rows;
+  return await postgres<UserNotification>("user_notifications")
+    .where({ user_id })
+    .select("*");
 };
 
 export const createUserNotification = async (
@@ -18,9 +16,8 @@ export const createUserNotification = async (
   content: string,
   payload: Record<string, unknown>
 ): Promise<UserNotification> => {
-  const queryResult = await postgres.query(
-    "INSERT INTO user_notifications(user_id,action,content,payload) VALUES ($1,$2,$3,$4) RETURNING *",
-    [user_id, action, content, payload]
-  );
-  return queryResult.rows[0];
+  const queryResult = await postgres<UserNotification>("user_notifications")
+    .insert({ user_id, action, payload, content })
+    .returning("*");
+  return queryResult[0];
 };

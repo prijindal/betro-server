@@ -1,5 +1,8 @@
 import { migrate, loadMigrationFiles } from "postgres-migrations";
-import pool from "../db/postgres";
+import { Pool } from "pg";
+import { POSTGRES_URI } from "../config";
+
+const pool = new Pool({ connectionString: POSTGRES_URI });
 
 const runMigration = async () => {
   await pool.connect();

@@ -6,6 +6,7 @@ import { SECRET } from "../config";
 
 import { verifyServerHash, generateServerHash } from "../util/crypto";
 import { isEmpty } from "lodash";
+import { UserPostgres } from "../interfaces/database/UserPostgres";
 
 export type LoginBody = {
   email: string;
@@ -20,21 +21,20 @@ export const checkUserCredentials = async (
 ): Promise<
   { isValid: false } | { isValid: true; user_id: string; key_id: string }
 > => {
-  const queryResult = await postgres.query(
-    "SELECT id,master_hash,key_id from users WHERE email = $1",
-    [email]
-  );
-  if (queryResult.rowCount == 0) {
+  const queryResult = await postgres<UserPostgres>("users")
+    .where({ email })
+    .select("id", "master_hash", "key_id");
+  if (queryResult.length == 0) {
     return { isValid: false };
   }
-  const server_hash = queryResult.rows[0].master_hash;
+  const server_hash = queryResult[0].master_hash;
   if (!verifyServerHash(password, server_hash)) {
     return { isValid: false };
   }
   return {
     isValid: true,
-    user_id: queryResult.rows[0].id,
-    key_id: queryResult.rows[0].key_id,
+    user_id: queryResult[0].id,
+    key_id: queryResult[0].key_id,
   };
 };
 
@@ -45,17 +45,14 @@ export const createAccessToken = async (
 ): Promise<{ access_token_id: string; access_token: string }> => {
   const access_token = uuidv4();
   const access_token_hash = generateServerHash(access_token);
-  const queryResult = await postgres.query(
-    `INSERT INTO access_tokens(user_id, access_token_hash,device_id,device_display_name)
-    VALUES($1,$2,$3,$4) RETURNING *
-    `,
-    [user_id, access_token_hash, device_id, device_display_name]
-  );
-  if (queryResult.rowCount == 0) {
+  const queryResult = await postgres("access_tokens")
+    .insert({ user_id, access_token_hash, device_id, device_display_name })
+    .returning("*");
+  if (queryResult.length == 0) {
     throw new Error();
   }
   return {
-    access_token_id: queryResult.rows[0].id,
+    access_token_id: queryResult[0].id,
     access_token: access_token,
   };
 };
@@ -65,14 +62,13 @@ export const verifyAccessToken = async (
   access_token_id: string,
   access_token: string
 ): Promise<boolean> => {
-  const queryResult = await postgres.query(
-    "SELECT access_token_hash FROM access_tokens WHERE id=$1 AND user_id=$2",
-    [access_token_id, user_id]
-  );
-  if (queryResult.rowCount == 0) {
+  const queryResult = await postgres("access_tokens")
+    .where({ id: access_token_id, user_id })
+    .select("access_token_hash");
+  if (queryResult.length == 0) {
     return false;
   }
-  if (!verifyServerHash(access_token, queryResult.rows[0].access_token_hash)) {
+  if (!verifyServerHash(access_token, queryResult[0].access_token_hash)) {
     return false;
   }
   return true;

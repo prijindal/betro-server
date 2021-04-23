@@ -5,11 +5,10 @@ export const fetchUserTableCount = async (
   user_id: string,
   table: string
 ): Promise<number> => {
-  const queryResult = await postgres.query(
-    `SELECT count(id) FROM ${table} WHERE user_id=$1`,
-    [user_id]
-  );
-  return parseInt(queryResult.rows[0].count, 10);
+  const queryResult = await postgres(table)
+    .where({ user_id })
+    .count<Array<Record<"count", string>>>("id");
+  return parseInt(queryResult[0].count, 10);
 };
 
 export const UserPaginationWrapper = async <T extends { created_at: Date }>(

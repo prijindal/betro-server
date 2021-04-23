@@ -3,10 +3,9 @@ import { throttle } from "throttle-debounce";
 
 const userAccessedFn = async (access_token_id: string): Promise<void> => {
   try {
-    const queryResult = await postgres.query(
-      "UPDATE access_tokens SET accessed_at = NOW() WHERE id=$1",
-      [access_token_id]
-    );
+    await postgres("access_tokens")
+      .where({ id: access_token_id })
+      .update({ accessed_at: postgres.fn.now() });
   } catch (e) {
     console.error(e);
   }

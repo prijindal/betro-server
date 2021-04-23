@@ -1,6 +1,10 @@
-import { Pool } from "pg";
+import knex from "knex";
 import { POSTGRES_URI } from "../../config";
 
-const postgres = new Pool({ connectionString: POSTGRES_URI });
+const postgres = knex({
+  client: "pg",
+  connection: POSTGRES_URI,
+  pool: { min: 0, max: 7 },
+});
 
 export default postgres;

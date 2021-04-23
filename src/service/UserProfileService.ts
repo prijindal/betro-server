@@ -1,30 +1,24 @@
 import postgres from "../db/postgres";
 import { UserProfilePostgres } from "../interfaces/database/UserProfilePostgres";
 
-export const fetchProfiles = async (
-  user_ids: Array<string>
-): Promise<Array<UserProfilePostgres>> => {
-  const queryResult = await postgres.query(
-    "SELECT * FROM user_profile WHERE user_id = ANY ($1)",
-    [user_ids]
-  );
-  return queryResult.rows;
-};
+export const fetchProfiles = async (user_ids: Array<string>) =>
+  postgres<UserProfilePostgres>("user_profile").whereIn("user_id", user_ids);
 
 export const fetchProfile = async (
   user_id: string,
   include_profile_picture: boolean = true
 ): Promise<UserProfilePostgres | null> => {
-  const queryResult = await postgres.query(
-    `SELECT id, user_id, key_id, first_name, last_name ${
-      include_profile_picture ? ", profile_picture" : ""
-    } FROM user_profile WHERE user_id=$1`,
-    [user_id]
-  );
-  if (queryResult.rowCount == 0) {
+  const query = postgres<UserProfilePostgres>("user_profile")
+    .where({ user_id })
+    .select("id", "user_id", "key_id", "first_name", "last_name");
+  if (include_profile_picture) {
+    query.select("profile_picture");
+  }
+  const queryResult = (await query) as Array<UserProfilePostgres>;
+  if (queryResult.length == 0) {
     return null;
   }
-  return queryResult.rows[0];
+  return queryResult[0];
 };
 
 export const createProfile = async (
@@ -34,15 +28,13 @@ export const createProfile = async (
   last_name: string,
   profile_picture: string
 ): Promise<UserProfilePostgres> => {
-  const queryResult = await postgres.query(
-    "INSERT INTO user_profile(user_id,key_id,first_name,last_name,profile_picture) " +
-      "VALUES($1,$2,$3,$4,$5) RETURNING *",
-    [user_id, key_id, first_name, last_name, profile_picture]
-  );
-  if (queryResult.rowCount == 0) {
+  const queryResult = await postgres<UserProfilePostgres>("user_profile")
+    .insert({ user_id, key_id, first_name, last_name, profile_picture })
+    .returning("*");
+  if (queryResult.length == 0) {
     throw new Error();
   }
-  return queryResult.rows[0];
+  return queryResult[0];
 };
 
 export const updateProfile = async (
@@ -50,14 +42,13 @@ export const updateProfile = async (
   first_name: string,
   last_name: string,
   profile_picture: string
-): Promise<UserProfilePostgres> => {
-  const queryResult = await postgres.query(
-    "UPDATE user_profile SET first_name = $1, last_name = $2,profile_picture = $3 " +
-      " WHERE id=$4 RETURNING *",
-    [first_name, last_name, profile_picture, id]
-  );
-  if (queryResult.rowCount == 0) {
+) => {
+  const queryResult = await postgres<UserProfilePostgres>("user_profile")
+    .where({ id })
+    .update({ first_name, last_name, profile_picture })
+    .returning("*");
+  if (queryResult.length == 0) {
     throw new Error();
   }
-  return queryResult.rows[0];
+  return queryResult[0];
 };

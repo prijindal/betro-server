@@ -101,11 +101,10 @@ const generateUsers = async (n: number = 2): Promise<Array<GeneratedUser>> => {
 };
 
 const deleteUser = async (user: GeneratedUser): Promise<boolean> => {
-  const queryResponse = await postgres.query(
-    "DELETE FROM users WHERE email = $1",
-    [user.credentials.email]
-  );
-  return queryResponse.rowCount == 1;
+  const queryResponse = await postgres("users")
+    .where({ email: user.credentials.email })
+    .delete();
+  return queryResponse == 1;
 };
 
 describe("User functions", () => {
@@ -441,7 +440,7 @@ describe("User functions", () => {
       .get("/api/follow/approvals")
       .set({ ...headers, Authorization: `Bearer ${token2}` });
     expect(response.status).toEqual(200);
-    expect(response.body.data.length).toEqual(1);
+    expect(response.body.total).toEqual(1);
     expect(response.body.data[0].follower_id).toEqual(user1.id);
     const publicKey = response.body.data[0].public_key;
     const groupSymKey = user2.keys.groupSymKey;
@@ -474,7 +473,7 @@ describe("User functions", () => {
       .get("/api/follow/followers")
       .set({ ...headers, Authorization: `Bearer ${token2}` });
     expect(response.status).toEqual(200);
-    expect(response.body.data.length).toEqual(1);
+    expect(response.body.total).toEqual(1);
     expect(response.body.data[0].user_id).toEqual(user1.id);
   });
   it("Check followees", async () => {
@@ -485,7 +484,7 @@ describe("User functions", () => {
       .get("/api/follow/followees")
       .set({ ...headers, Authorization: `Bearer ${token1}` });
     expect(response.status).toEqual(200);
-    expect(response.body.data.length).toEqual(1);
+    expect(response.body.total).toEqual(1);
     expect(response.body.data[0].user_id).toEqual(user2.id);
   });
   it("Check notification for approved", async () => {

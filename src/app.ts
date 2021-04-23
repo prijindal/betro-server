@@ -20,7 +20,7 @@ import settingsRoutes from "./routes/settingsRoutes";
 
 export async function initServer(): Promise<express.Express> {
   const app = express();
-  await postgres.connect();
+  // await postgres.connect();
   app.set("trust proxy", 1);
 
   app.set("port", process.env.PORT || 4000);

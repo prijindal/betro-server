@@ -1,28 +1,26 @@
 import pool from "../db/postgres";
 
 const cleanAllTables = async () => {
-  const client = await pool.connect();
+  const trx = await pool.transaction();
 
   try {
-    await client.query("BEGIN");
-    await client.query("DROP TABLE IF EXISTS settings_notifications;");
-    await client.query("DROP TABLE IF EXISTS user_notifications;");
-    await client.query("DROP TYPE IF EXISTS settings_notification_action");
-    await client.query("DROP TABLE IF EXISTS posts;");
-    await client.query("DROP TABLE IF EXISTS group_follow_approvals;");
-    await client.query("DROP TABLE IF EXISTS group_policies;");
-    await client.query("DROP TABLE IF EXISTS user_profile;");
-    await client.query("DROP TABLE IF EXISTS user_sym_keys;");
-    await client.query("DROP TABLE IF EXISTS access_tokens;");
-    await client.query("DROP TABLE IF EXISTS users;");
-    await client.query("DROP TABLE IF EXISTS user_rsa_keys;");
-    await client.query("DROP TABLE IF EXISTS migrations;");
-    await client.query("COMMIT");
+    await trx.raw("BEGIN");
+    await trx.raw("DROP TABLE IF EXISTS settings_notifications;");
+    await trx.raw("DROP TABLE IF EXISTS user_notifications;");
+    await trx.raw("DROP TYPE IF EXISTS settings_notification_action");
+    await trx.raw("DROP TABLE IF EXISTS posts;");
+    await trx.raw("DROP TABLE IF EXISTS group_follow_approvals;");
+    await trx.raw("DROP TABLE IF EXISTS group_policies;");
+    await trx.raw("DROP TABLE IF EXISTS user_profile;");
+    await trx.raw("DROP TABLE IF EXISTS user_sym_keys;");
+    await trx.raw("DROP TABLE IF EXISTS access_tokens;");
+    await trx.raw("DROP TABLE IF EXISTS users;");
+    await trx.raw("DROP TABLE IF EXISTS user_rsa_keys;");
+    await trx.raw("DROP TABLE IF EXISTS migrations;");
+    await trx.commit();
   } catch (e) {
-    await client.query("ROLLBACK");
+    await trx.rollback();
     throw e;
-  } finally {
-    client.release();
   }
   process.exit();
 };

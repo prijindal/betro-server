@@ -6,25 +6,24 @@ import { QueryResult } from "pg";
 export const fetchUserNotificationSettings = async (
   user_id: string
 ): Promise<Array<UserNotificationSettingPostgres>> => {
-  const queryResult = await postgres.query(
-    "SELECT * FROM settings_notifications WHERE user_id=$1",
-    [user_id]
-  );
-  return queryResult.rows;
+  return postgres<UserNotificationSettingPostgres>("settings_notifications")
+    .where({ user_id })
+    .select("*");
 };
 
 export const checkUserNotificationSetting = async (
   user_id: string,
   action: NotificationSettingsAction
 ): Promise<boolean> => {
-  const queryResult = await postgres.query(
-    "SELECT id,enabled from settings_notifications WHERE user_id=$1 AND action=$2",
-    [user_id, action]
-  );
-  if (queryResult.rowCount == 0) {
+  const queryResult = await postgres<UserNotificationSettingPostgres>(
+    "settings_notifications"
+  )
+    .where({ user_id, action })
+    .select("enabled");
+  if (queryResult.length == 0) {
     return false;
   }
-  return queryResult.rows[0].enabled;
+  return queryResult[0].enabled;
 };
 
 export const saveUserNotificationSetting = async (
@@ -32,21 +31,25 @@ export const saveUserNotificationSetting = async (
   action: NotificationSettingsAction,
   enabled: boolean
 ): Promise<UserNotificationSettingPostgres> => {
-  const queryResult = await postgres.query(
-    "SELECT id from settings_notifications WHERE user_id=$1 AND action=$2",
-    [user_id, action]
-  );
-  let queryResponse: QueryResult;
-  if (queryResult.rowCount == 0) {
-    queryResponse = await postgres.query(
-      "INSERT INTO settings_notifications(user_id, action, enabled) VALUES($1, $2, $3) RETURNING *",
-      [user_id, action, enabled]
-    );
+  const queryResult = await postgres<UserNotificationSettingPostgres>(
+    "settings_notifications"
+  )
+    .where({ user_id, action })
+    .select("id");
+  let queryResponse: Array<UserNotificationSettingPostgres>;
+  if (queryResult.length == 0) {
+    queryResponse = await postgres<UserNotificationSettingPostgres>(
+      "settings_notifications"
+    )
+      .insert({ user_id, action, enabled })
+      .returning("*");
   } else {
-    queryResponse = await postgres.query(
-      "UPDATE settings_notifications SET enabled = $1 WHERE user_id=$2 AND action=$3 RETURNING *",
-      [enabled, user_id, action]
-    );
+    queryResponse = await postgres<UserNotificationSettingPostgres>(
+      "settings_notifications"
+    )
+      .where({ user_id, action })
+      .update({ enabled })
+      .returning("*");
   }
-  return queryResponse.rows[0];
+  return queryResponse[0];
 };
