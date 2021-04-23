@@ -152,10 +152,18 @@ export const getFollowers = async (
     const groups = await fetchGroups(group_ids);
     const follower_ids = data.map((a) => a.user_id);
     const followers = await fetchUsers(follower_ids);
+    const isFollowings = await postgres<FollowPostgres>(
+      "group_follow_approvals"
+    )
+      .whereIn("followee_id", follower_ids)
+      .andWhere({ user_id: user_id });
     const response: Array<FollowerResponse> = [];
     data.forEach((follow) => {
       const group = groups.find((a) => a.id == follow.group_id);
       const follower = followers.find((a) => a.id == follow.user_id);
+      const isFollowing = isFollowings.find(
+        (a) => a.followee_id == follow.user_id
+      );
       if (group != null && follower != null) {
         response.push({
           user_id: follow.user_id,
@@ -164,6 +172,8 @@ export const getFollowers = async (
           group_id: group.id,
           group_name: group.name,
           group_is_default: group.is_default,
+          is_following: isFollowing != null,
+          is_following_approved: isFollowing != null && isFollowing.is_approved,
         });
       }
     });

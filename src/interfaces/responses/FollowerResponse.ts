@@ -5,4 +5,6 @@ export interface FollowerResponse {
   group_id: string;
   group_name: string;
   group_is_default: boolean;
+  is_following: boolean;
+  is_following_approved: boolean;
 }
