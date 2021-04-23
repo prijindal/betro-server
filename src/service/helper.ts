@@ -1,4 +1,4 @@
-import { isEmpty } from "lodash";
+import { isEmpty, isNil } from "lodash";
 import { Knex } from "knex";
 import postgres from "../db/postgres";
 
@@ -16,20 +16,36 @@ export const tableCount = async <T extends { id: string }>(
   }
 };
 
+const base64ToDate = (b64: string): Date | undefined => {
+  const date = new Date(Buffer.from(b64, "base64").toString("utf-8"));
+  if (date instanceof Date && !isNaN(date.valueOf())) {
+    return date;
+  }
+  return undefined;
+};
+
+const dateToBase64 = (date: Date): string => {
+  return Buffer.from(date.toISOString(), "utf-8").toString("base64");
+};
+
 export const UserPaginationWrapper = async <
   T extends { id: string; created_at: Date }
 >(
   table: string,
   where: Knex.DbRecord<Knex.ResolveTableType<T>>,
   limitStr: string,
-  after: string
+  afterStr: string
 ): Promise<{
   data: Array<T>;
   limit: number;
   total: number;
-  after: Date;
+  after: string;
   next: boolean;
 }> => {
+  let after: Date | undefined;
+  if (afterStr != null && !isNil(afterStr) && !isEmpty(afterStr)) {
+    after = base64ToDate(afterStr);
+  }
   const totalCount = await tableCount<T>(table, where);
   let limit = 50;
   try {
@@ -41,14 +57,15 @@ export const UserPaginationWrapper = async <
       limit = 50;
     }
   }
-  let response: Array<T> = [];
   const responseQuery: Knex.QueryBuilder<T> = postgres<T>(table)
     .select("*")
+    .orderBy("created_at", "desc")
+    .limit(limit)
     .where(where);
-  if (after != null && !isEmpty(after)) {
+  if (after != null) {
     responseQuery.where("created_at", "<", after);
   }
-  response = await responseQuery;
+  const response = await responseQuery;
   let afterCursor = null;
   if (response.length > 0) {
     afterCursor = response[response.length - 1].created_at;
@@ -56,8 +73,8 @@ export const UserPaginationWrapper = async <
   const countAfterQuery = postgres<T>(table)
     .count<Array<Record<"count", string>>>("id")
     .where(where);
-  if (after != null && !isEmpty(after)) {
-    countAfterQuery.where("created_at", "<", after);
+  if (afterCursor != null) {
+    countAfterQuery.where("created_at", "<", afterCursor);
   }
   const countAfterResponse = await countAfterQuery;
   const countAfter = parseInt(countAfterResponse[0].count, 10);
@@ -65,7 +82,7 @@ export const UserPaginationWrapper = async <
     data: response,
     limit,
     total: totalCount,
-    after: countAfter != 0 ? afterCursor : null,
+    after: countAfter != 0 ? dateToBase64(afterCursor) : null,
     next: countAfter != 0,
   };
 };
