@@ -6,6 +6,8 @@ import {
   checkFollow,
   createFollow,
   fetchFollowees,
+  fetchFolloweesCount,
+  fetchFollowerCount,
   fetchFollowers,
   fetchPendingApproval,
   fetchPendingApprovals,
@@ -25,6 +27,7 @@ import { createUserNotification } from "../service/NotificationService";
 import { checkUserNotificationSetting } from "../service/SettingsService";
 import { PaginatedResponse } from "../interfaces/responses/PaginatedResponse";
 import { FollowPostgres } from "../interfaces/database/FollowPostgres";
+import { UserPaginationWrapper } from "../service/helper";
 
 export const followUser = async (
   req: Request<null, null, FollowRequest>,
@@ -75,42 +78,30 @@ export const followUser = async (
 };
 
 export const getApprovals = async (
-  req: Request<null, null, null, { after: Date; limit: string }>,
+  req: Request<null, null, null, { after: string; limit: string }>,
   res: Response<PaginatedResponse<ApprovalResponse> | ErrorDataType>
 ): Promise<void> => {
   const user_id = res.locals.user_id;
   try {
-    const approvalCount = await fetchPendingApprovalsCount(user_id);
-    let limit = 50;
-    try {
-      limit = parseInt(req.query.limit, 10);
-    } catch (e) {
-      limit = 50;
-    } finally {
-      if (isNaN(limit)) {
-        limit = 50;
-      }
-    }
-    let approvals: FollowPostgres[] = [];
-    if (req.query.after != null && !isEmpty(req.query.after)) {
-      try {
-        approvals = await fetchPendingApprovals(
-          user_id,
-          limit,
-          req.query.after
-        );
-      } catch (e) {
-        approvals = await fetchPendingApprovals(user_id, limit);
-      }
-    } else {
-      approvals = await fetchPendingApprovals(user_id, limit);
-    }
-    const user_ids = approvals.map((a) => a.user_id);
+    const {
+      data,
+      limit,
+      after,
+      total,
+      next,
+    } = await UserPaginationWrapper<FollowPostgres>(
+      fetchPendingApprovals,
+      fetchPendingApprovalsCount,
+      user_id,
+      req.query.limit,
+      req.query.after
+    );
+    const user_ids = data.map((a) => a.user_id);
     const users = await fetchUsers(user_ids);
     const key_ids = users.map((a) => a.key_id);
     const rsa_keys = await getRsaKeys(key_ids, false);
     const response: Array<ApprovalResponse> = [];
-    approvals.forEach((approval) => {
+    data.forEach((approval) => {
       const user = users.find((a) => a.id == approval.user_id);
       if (user != null) {
         const rsa_key = rsa_keys.find((a) => a.id == user.key_id);
@@ -125,22 +116,12 @@ export const getApprovals = async (
         }
       }
     });
-    let after = null;
-    if (response.length > 0) {
-      after = response[response.length - 1].created_at;
-    }
-    let approvalCountAfter: number;
-    try {
-      approvalCountAfter = await fetchPendingApprovalsCount(user_id, after);
-    } catch (e) {
-      approvalCountAfter = await fetchPendingApprovalsCount(user_id);
-    }
     res.status(200).send({
       data: response,
       limit,
-      total: approvalCount,
-      after: approvalCountAfter != 0 ? after : null,
-      next: approvalCountAfter != 0,
+      total,
+      after,
+      next,
     });
   } catch (e) {
     console.error(e);
@@ -149,18 +130,30 @@ export const getApprovals = async (
 };
 
 export const getFollowers = async (
-  req: Request,
-  res: Response<Array<FollowerResponse> | ErrorDataType>
+  req: Request<null, null, null, { after: string; limit: string }>,
+  res: Response<PaginatedResponse<FollowerResponse> | ErrorDataType>
 ): Promise<void> => {
   const user_id = res.locals.user_id;
   try {
-    const follows = await fetchFollowers(user_id);
-    const group_ids = follows.map((a) => a.group_id);
+    const {
+      data,
+      limit,
+      after,
+      total,
+      next,
+    } = await UserPaginationWrapper<FollowPostgres>(
+      fetchFollowers,
+      fetchFollowerCount,
+      user_id,
+      req.query.limit,
+      req.query.after
+    );
+    const group_ids = data.map((a) => a.group_id);
     const groups = await fetchGroups(group_ids);
-    const follower_ids = follows.map((a) => a.user_id);
+    const follower_ids = data.map((a) => a.user_id);
     const followers = await fetchUsers(follower_ids);
     const response: Array<FollowerResponse> = [];
-    follows.forEach((follow) => {
+    data.forEach((follow) => {
       const group = groups.find((a) => a.id == follow.group_id);
       const follower = followers.find((a) => a.id == follow.user_id);
       if (group != null && follower != null) {
@@ -174,7 +167,7 @@ export const getFollowers = async (
         });
       }
     });
-    res.status(200).send(response);
+    res.status(200).send({ data: response, limit, after, total, next });
   } catch (e) {
     console.error(e);
     res.status(503).send(errorResponse(503));
@@ -182,16 +175,28 @@ export const getFollowers = async (
 };
 
 export const getFollowees = async (
-  req: Request,
-  res: Response<Array<FolloweeResponse> | ErrorDataType>
+  req: Request<null, null, null, { after: string; limit: string }>,
+  res: Response<PaginatedResponse<FolloweeResponse> | ErrorDataType>
 ): Promise<void> => {
   const user_id = res.locals.user_id;
   try {
-    const follows = await fetchFollowees(user_id);
-    const followee_ids = follows.map((a) => a.followee_id);
+    const {
+      data,
+      limit,
+      after,
+      total,
+      next,
+    } = await UserPaginationWrapper<FollowPostgres>(
+      fetchFollowees,
+      fetchFolloweesCount,
+      user_id,
+      req.query.limit,
+      req.query.after
+    );
+    const followee_ids = data.map((a) => a.followee_id);
     const followees = await fetchUsers(followee_ids);
     const response: Array<FolloweeResponse> = [];
-    follows.forEach((follow) => {
+    data.forEach((follow) => {
       const followee = followees.find((a) => a.id == follow.followee_id);
       if (followee != null) {
         response.push({
@@ -202,7 +207,7 @@ export const getFollowees = async (
         });
       }
     });
-    res.status(200).send(response);
+    res.status(200).send({ data: response, limit, after, total, next });
   } catch (e) {
     console.error(e);
     res.status(503).send(errorResponse(503));

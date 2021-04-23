@@ -61,31 +61,65 @@ export const fetchPendingApprovals = async (
   return queryResult.rows;
 };
 
-export const fetchFollowerCount = async (user_id: string): Promise<number> => {
-  const queryResult = await postgres.query(
-    "SELECT count(*) FROM group_follow_approvals WHERE followee_id=$1 AND is_approved=true",
-    [user_id]
-  );
+export const fetchFollowerCount = async (
+  user_id: string,
+  after_id?: Date
+): Promise<number> => {
+  let query =
+    "SELECT count(*) FROM group_follow_approvals WHERE followee_id=$1 AND is_approved=true";
+  const params: Array<Date | string> = [user_id];
+  if (after_id != null) {
+    query += " AND created_at < $2";
+    params.push(after_id);
+  }
+  const queryResult = await postgres.query(query, params);
   return parseInt(queryResult.rows[0].count, 10);
 };
 
 export const fetchFollowers = async (
-  user_id: string
+  user_id: string,
+  limit: number = 50,
+  after_id?: Date
 ): Promise<Array<FollowPostgres>> => {
-  const queryResult = await postgres.query(
-    "SELECT * FROM group_follow_approvals WHERE followee_id=$1",
-    [user_id]
-  );
+  let query =
+    "SELECT * FROM group_follow_approvals WHERE followee_id=$1 AND is_approved=true";
+  const params: Array<Date | string> = [user_id];
+  if (after_id != null) {
+    query += " AND created_at < $2";
+    params.push(after_id);
+  }
+  query += ` ORDER BY created_at DESC limit ${limit}`;
+  const queryResult = await postgres.query(query, params);
   return queryResult.rows;
 };
 
+export const fetchFolloweesCount = async (
+  user_id: string,
+  after_id?: Date
+): Promise<number> => {
+  let query = "SELECT count(*) FROM group_follow_approvals WHERE user_id=$1";
+  const params: Array<Date | string> = [user_id];
+  if (after_id != null) {
+    query += " AND created_at < $2";
+    params.push(after_id);
+  }
+  const queryResult = await postgres.query(query, params);
+  return parseInt(queryResult.rows[0].count, 10);
+};
+
 export const fetchFollowees = async (
-  user_id: string
+  user_id: string,
+  limit: number = 50,
+  after_id?: Date
 ): Promise<Array<FollowPostgres>> => {
-  const queryResult = await postgres.query(
-    "SELECT * FROM group_follow_approvals WHERE user_id=$1",
-    [user_id]
-  );
+  let query = "SELECT * FROM group_follow_approvals WHERE user_id=$1";
+  const params: Array<Date | string> = [user_id];
+  if (after_id != null) {
+    query += " AND created_at < $2";
+    params.push(after_id);
+  }
+  query += ` ORDER BY created_at DESC limit ${limit}`;
+  const queryResult = await postgres.query(query, params);
   return queryResult.rows;
 };
 

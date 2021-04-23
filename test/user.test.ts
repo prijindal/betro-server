@@ -474,8 +474,8 @@ describe("User functions", () => {
       .get("/api/follow/followers")
       .set({ ...headers, Authorization: `Bearer ${token2}` });
     expect(response.status).toEqual(200);
-    expect(response.body.length).toEqual(1);
-    expect(response.body[0].user_id).toEqual(user1.id);
+    expect(response.body.data.length).toEqual(1);
+    expect(response.body.data[0].user_id).toEqual(user1.id);
   });
   it("Check followees", async () => {
     const user1 = users[0];
@@ -485,8 +485,8 @@ describe("User functions", () => {
       .get("/api/follow/followees")
       .set({ ...headers, Authorization: `Bearer ${token1}` });
     expect(response.status).toEqual(200);
-    expect(response.body.length).toEqual(1);
-    expect(response.body[0].user_id).toEqual(user2.id);
+    expect(response.body.data.length).toEqual(1);
+    expect(response.body.data[0].user_id).toEqual(user2.id);
   });
   it("Check notification for approved", async () => {
     const user1 = users[0];
