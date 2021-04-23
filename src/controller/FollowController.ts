@@ -1,5 +1,4 @@
 import { Request, Response } from "express";
-import { isEmpty } from "lodash";
 import { getRsaKeys } from "../service/KeyService";
 import {
   approveFollowRequest,

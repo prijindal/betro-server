@@ -2,7 +2,6 @@ import express from "express";
 import cors from "cors";
 import compression from "compression";
 import helmet from "helmet";
-import postgres from "./db/postgres";
 import ROUTES from "./constant/Routes";
 
 import { userRateLimiter, loginRateLimiter } from "./middleware/rateLimit";
@@ -20,7 +19,6 @@ import settingsRoutes from "./routes/settingsRoutes";
 
 export async function initServer(): Promise<express.Express> {
   const app = express();
-  // await postgres.connect();
   app.set("trust proxy", 1);
 
   app.set("port", process.env.PORT || 4000);

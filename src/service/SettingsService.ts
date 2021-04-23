@@ -1,7 +1,6 @@
 import postgres from "../db/postgres";
 import { UserNotificationSettingPostgres } from "../interfaces/database/UserNotificationSettingPostgres";
 import { NotificationSettingsAction } from "../interfaces/database/NotificationSettingsAction";
-import { QueryResult } from "pg";
 
 export const fetchUserNotificationSettings = async (
   user_id: string
