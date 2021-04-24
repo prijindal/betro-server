@@ -35,6 +35,13 @@ import { CountResponse } from "../interfaces/responses/CountResponse";
 import { CountIncludeType } from "../interfaces/requests/CountRequest";
 import { tableCount } from "../service/helper";
 import { FollowPostgres } from "../interfaces/database/FollowPostgres";
+import {
+  PostsFeedResponse,
+  PostResponse,
+  PostUserResponse,
+} from "../interfaces/responses/PostResponse";
+import { fetchUserPosts } from "../service/PostService";
+import { fetchGroups, fetchUserGroups } from "../service/GroupService";
 
 export const availableUsername = async (
   req: Request<null, null, null, { username: string }>,
@@ -436,6 +443,39 @@ export const fetchCounts = async (
     }
     res.status(200).send(response);
   } catch (e) {
+    res.status(503).send(errorResponse(503));
+  }
+};
+
+export const fetchOwnPosts = async (
+  req: Request,
+  res: Response<PostsFeedResponse | ErrorDataType>
+): Promise<void> => {
+  const own_id = res.locals.user_id;
+  try {
+    const postsResponse = await fetchUserPosts(own_id);
+    const groups = await fetchUserGroups(own_id);
+    const keys = await getSymKeys(groups.map((a) => a.key_id));
+    const posts: Array<PostResponse> = [];
+    for (const post of postsResponse) {
+      posts.push({
+        id: post.id,
+        user_id: post.user_id,
+        media_content: post.media_content,
+        media_encoding: post.media_encoding,
+        text_content: post.text_content,
+        key_id: post.key_id,
+        created_at: post.created_at,
+      });
+    }
+    const feed: PostsFeedResponse = {
+      posts,
+      keys,
+      users: {},
+    };
+    res.status(200).send(feed);
+  } catch (e) {
+    console.error(e);
     res.status(503).send(errorResponse(503));
   }
 };
