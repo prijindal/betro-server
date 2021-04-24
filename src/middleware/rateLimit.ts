@@ -28,7 +28,7 @@ export const loginRateLimiter = rateLimit({
   keyGenerator: (req: Request) => {
     return req.ip;
   },
-  skip: (req: Request, res: Response) => {
+  skip: (req: Request) => {
     if (req.ip == "::ffff:127.0.0.1") {
       return true;
     }

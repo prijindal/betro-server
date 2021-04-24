@@ -86,7 +86,10 @@ export const parseJwt = async (
   if (!isEmpty(storedUserId) && !isEmpty(storedTokenId)) {
     return { user_id: storedUserId, access_token_id: storedTokenId };
   }
-  const { user_id, id, key } = jsonwebtoken.verify(jwt, SECRET) as any;
+  const { user_id, id, key } = jsonwebtoken.verify(jwt, SECRET) as Record<
+    string,
+    string
+  >;
   const isVerified = await verifyAccessToken(user_id, id, key);
   if (!isVerified) {
     return { user_id: null, access_token_id: null };

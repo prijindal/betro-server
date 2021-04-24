@@ -38,10 +38,9 @@ import { FollowPostgres } from "../interfaces/database/FollowPostgres";
 import {
   PostsFeedResponse,
   PostResponse,
-  PostUserResponse,
 } from "../interfaces/responses/PostResponse";
 import { fetchUserPosts } from "../service/PostService";
-import { fetchGroups, fetchUserGroups } from "../service/GroupService";
+import { fetchUserGroups } from "../service/GroupService";
 
 export const availableUsername = async (
   req: Request<null, null, null, { username: string }>,
