@@ -88,7 +88,7 @@ CREATE TABLE group_follow_approvals (
     user_id uuid NOT NULL,
     followee_id uuid NOT NULL,/* This means user_id follows followee_id */
     group_sym_key VARCHAR,
-    user_sym_key VARCHAR,
+    followee_sym_key VARCHAR,
     group_id uuid,
     is_approved BOOLEAN DEFAULT FALSE,
     created_at timestamptz DEFAULT NOW(),

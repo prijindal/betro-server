@@ -37,7 +37,7 @@ export const postProcessPosts = async (
         userResponse.first_name = profile.first_name;
         userResponse.last_name = profile.last_name;
         userResponse.profile_picture = profile.profile_picture;
-        userResponse.sym_key = follow.user_sym_key;
+        userResponse.sym_key = follow.followee_sym_key;
       }
       posts_users[user.id] = userResponse;
     }

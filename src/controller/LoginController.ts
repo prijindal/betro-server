@@ -38,8 +38,7 @@ import { FollowPostgres } from "../interfaces/database/FollowPostgres";
 
 export const availableUsername = async (
   req: Request<null, null, null, { username: string }>,
-  res: Response,
-  next: NextFunction
+  res: Response
 ): Promise<void> => {
   try {
     const queryResult = await isUsernameAvailable(req.query.username);
@@ -50,14 +49,12 @@ export const availableUsername = async (
     }
   } catch (e) {
     res.status(503).send(errorResponse(503));
-    next(e);
   }
 };
 
 export const availableEmail = async (
   req: Request<null, null, null, { email: string }>,
-  res: Response,
-  next: NextFunction
+  res: Response
 ): Promise<void> => {
   try {
     const queryResult = await isEmailAvailable(req.query.email);
@@ -68,7 +65,6 @@ export const availableEmail = async (
     }
   } catch (e) {
     res.status(503).send(errorResponse(503));
-    next(e);
   }
 };
 

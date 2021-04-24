@@ -17,6 +17,7 @@ import { PaginatedResponse } from "../interfaces/responses/PaginatedResponse";
 import { FollowPostgres } from "../interfaces/database/FollowPostgres";
 import { UserPaginationWrapper } from "../service/helper";
 import { UserPostgres } from "../interfaces/database/UserPostgres";
+import { fetchProfile } from "../service/UserProfileService";
 
 export const followUser = async (
   req: Request<null, null, FollowRequest>,
@@ -230,7 +231,7 @@ export const approveUser = async (
   const user_id = res.locals.user_id;
   const follow_id = req.body.follow_id;
   const group_sym_key = req.body.group_sym_key;
-  const user_sym_key = req.body.user_sym_key;
+  const followee_sym_key = req.body.followee_sym_key;
   const group_id = req.body.group_id;
   try {
     const approval = await postgres<FollowPostgres>("group_follow_approvals")
@@ -247,33 +248,45 @@ export const approveUser = async (
         if (group == null) {
           res.status(404).send(errorResponse(404, "Group not found"));
         } else {
-          const approved = await postgres<FollowPostgres>(
-            "group_follow_approvals"
-          )
-            .where({ followee_id: user_id, id: follow_id })
-            .update({
-              is_approved: true,
-              group_id,
-              group_sym_key,
-              user_sym_key,
-            });
-          const users = await fetchUsers([user_id]);
-          if (users.length == 1) {
-            const user = users[0];
-            const notificationEnabled = await checkUserNotificationSetting(
-              approval.user_id,
-              "on_approved"
-            );
-            if (notificationEnabled) {
-              await createUserNotification(
-                approval.user_id,
-                "on_approved",
-                `${user.username} has approved your follow request`,
-                { username: user.username }
+          const profile = await fetchProfile(user_id);
+          if (profile == null) {
+            res
+              .status(404)
+              .send(
+                errorResponse(
+                  404,
+                  "User must have a valid profile before approving"
+                )
               );
+          } else {
+            const approved = await postgres<FollowPostgres>(
+              "group_follow_approvals"
+            )
+              .where({ followee_id: user_id, id: follow_id })
+              .update({
+                is_approved: true,
+                group_id,
+                group_sym_key,
+                followee_sym_key,
+              });
+            const users = await fetchUsers([user_id]);
+            if (users.length == 1) {
+              const user = users[0];
+              const notificationEnabled = await checkUserNotificationSetting(
+                approval.user_id,
+                "on_approved"
+              );
+              if (notificationEnabled) {
+                await createUserNotification(
+                  approval.user_id,
+                  "on_approved",
+                  `${user.username} has approved your follow request`,
+                  { username: user.username }
+                );
+              }
             }
+            res.status(200).send({ approved: approved === 1 });
           }
-          res.status(200).send({ approved: approved === 1 });
         }
       }
     }
