@@ -406,7 +406,7 @@ export const fetchCounts = async (
     ) as Array<CountIncludeType>;
     const tableMapping: { [k: string]: string } = {
       notifications: "user_notifications",
-      notificationSettings: "settings_notifications",
+      settings: "user_settings",
       groups: "group_policies",
       followees: "group_follow_approvals",
       posts: "posts",

@@ -5,9 +5,9 @@ const cleanAllTables = async () => {
 
   try {
     await trx.raw("BEGIN");
-    await trx.raw("DROP TABLE IF EXISTS settings_notifications;");
+    await trx.raw("DROP TABLE IF EXISTS user_settings;");
     await trx.raw("DROP TABLE IF EXISTS user_notifications;");
-    await trx.raw("DROP TYPE IF EXISTS settings_notification_action");
+    await trx.raw("DROP TYPE IF EXISTS user_settings_action");
     await trx.raw("DROP TABLE IF EXISTS posts;");
     await trx.raw("DROP TABLE IF EXISTS group_follow_approvals;");
     await trx.raw("DROP TABLE IF EXISTS group_policies;");

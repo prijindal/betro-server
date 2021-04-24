@@ -12,7 +12,7 @@ import { FollowerResponse } from "../interfaces/responses/FollowerResponse";
 import { fetchUsers } from "../service/UserService";
 import { FolloweeResponse } from "../interfaces/responses/FolloweeResponse";
 import { createUserNotification } from "../service/NotificationService";
-import { checkUserNotificationSetting } from "../service/SettingsService";
+import { checkUserSetting } from "../service/SettingsService";
 import { PaginatedResponse } from "../interfaces/responses/PaginatedResponse";
 import { FollowPostgres } from "../interfaces/database/FollowPostgres";
 import { UserPaginationWrapper } from "../service/helper";
@@ -70,7 +70,7 @@ export const followUser = async (
           const users = await fetchUsers([user_id]);
           if (users.length == 1) {
             const user = users[0];
-            const notificationEnabled = await checkUserNotificationSetting(
+            const notificationEnabled = await checkUserSetting(
               followeeUser.id,
               "on_followed"
             );
@@ -323,7 +323,7 @@ export const approveUser = async (
             const users = await fetchUsers([user_id]);
             if (users.length == 1) {
               const user = users[0];
-              const notificationEnabled = await checkUserNotificationSetting(
+              const notificationEnabled = await checkUserSetting(
                 approval.user_id,
                 "on_approved"
               );

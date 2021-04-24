@@ -1,20 +1,19 @@
 import { Request, Response } from "express";
 import { errorResponse } from "../util/responseHandler";
 import { ErrorDataType } from "../constant/ErrorData";
-import { UserNotificationSettingResponse } from "../interfaces/responses/UserNotificationSettingResponse";
-import {
-  fetchUserNotificationSettings,
-  saveUserNotificationSetting,
-} from "../service/SettingsService";
-import { NotificationSettingsAction } from "../interfaces/database/NotificationSettingsAction";
+import { UserSettingResponse } from "../interfaces/responses/UserSettingResponse";
+import { fetchUserSettings } from "../service/SettingsService";
+import { UserSettingsAction } from "../interfaces/database/UserSettingsAction";
+import postgres from "../db/postgres";
+import { UserSettingPostgres } from "../interfaces/database/UserSettingPostgres";
 
-export const getNotificationSettings = async (
+export const getUserSettings = async (
   req: Request,
-  res: Response<Array<UserNotificationSettingResponse> | ErrorDataType>
+  res: Response<Array<UserSettingResponse> | ErrorDataType>
 ): Promise<void> => {
   const user_id = res.locals.user_id;
   try {
-    const notifications = await fetchUserNotificationSettings(user_id);
+    const notifications = await fetchUserSettings(user_id);
     res.status(200).send(notifications);
   } catch (e) {
     console.error(e);
@@ -22,22 +21,30 @@ export const getNotificationSettings = async (
   }
 };
 
-export const saveNotificationSetting = async (
-  req: Request<
-    null,
-    null,
-    { action: NotificationSettingsAction; enabled: boolean }
-  >,
-  res: Response<UserNotificationSettingResponse | ErrorDataType>
+export const saveUserSetting = async (
+  req: Request<null, null, { action: UserSettingsAction; enabled: boolean }>,
+  res: Response<UserSettingResponse | ErrorDataType>
 ): Promise<void> => {
   const user_id = res.locals.user_id;
   try {
-    const notification = await saveUserNotificationSetting(
-      user_id,
-      req.body.action,
-      req.body.enabled
-    );
-    res.status(200).send(notification);
+    const action = req.body.action;
+    const enabled = req.body.enabled;
+
+    const queryResult = await postgres<UserSettingPostgres>("user_settings")
+      .where({ user_id, action })
+      .select("id");
+    let queryResponse: Array<UserSettingPostgres>;
+    if (queryResult.length == 0) {
+      queryResponse = await postgres<UserSettingPostgres>("user_settings")
+        .insert({ user_id, action, enabled })
+        .returning("*");
+    } else {
+      queryResponse = await postgres<UserSettingPostgres>("user_settings")
+        .where({ user_id, action })
+        .update({ enabled })
+        .returning("*");
+    }
+    res.status(200).send(queryResponse[0]);
   } catch (e) {
     console.error(e);
     res.status(503).send(errorResponse(503));

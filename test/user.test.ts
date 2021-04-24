@@ -310,7 +310,7 @@ describe("User functions", () => {
           for (const notification_setting of notification_settings) {
             const token = tokenMap[email];
             const response = await request(app)
-              .post("/api/settings/notifications")
+              .post("/api/settings")
               .send({ action: notification_setting, enabled: true })
               .set({ ...headers, Authorization: `Bearer ${token}` });
             expect(response.status).toEqual(200);
@@ -327,7 +327,7 @@ describe("User functions", () => {
         if (Object.prototype.hasOwnProperty.call(tokenMap, email)) {
           const token = tokenMap[email];
           const response = await request(app)
-            .get("/api/settings/notifications")
+            .get("/api/settings")
             .set({ ...headers, Authorization: `Bearer ${token}` });
           expect(response.status).toEqual(200);
           expect(response.body.length).toEqual(2);
@@ -407,11 +407,16 @@ describe("User functions", () => {
     const user1 = users[0];
     const user2 = users[1];
     const token1 = tokenMap[user1.credentials.email];
+    const encrypted_sym_key = await rsaEncrypt(
+      user2.keys.publicKey,
+      Buffer.from(user1.keys.profileSymKey, "base64")
+    );
     const response = await request(app)
       .post("/api/follow")
       .set({ ...headers, Authorization: `Bearer ${token1}` })
       .send({
         followee_username: user2.credentials.username,
+        sym_key: encrypted_sym_key,
       });
     expect(response.status).toEqual(200);
     expect(response.body.is_approved).toEqual(false);
@@ -459,7 +464,7 @@ describe("User functions", () => {
       .send({
         follow_id: response.body.data[0].id,
         group_sym_key: groupSymKeyEncrypted,
-        user_sym_key: userSymKeyEncrypted,
+        followee_sym_key: userSymKeyEncrypted,
         group_id: user2.groups[0].id,
       });
     expect(resp.status).toEqual(200);
@@ -561,6 +566,7 @@ describe("User functions", () => {
     expect(text_content.toString("utf-8")).toEqual("My First Post");
     const firstNameEncrypted = userresponse[posts[0].user_id].first_name;
     const user_sym_key_encrypted = userresponse[posts[0].user_id].sym_key;
+    console.log(firstNameEncrypted);
     const userSymKey = await rsaDecrypt(
       priv_key.data.toString("base64"),
       user_sym_key_encrypted
@@ -591,7 +597,7 @@ describe("User functions", () => {
   it("Checks count", async () => {
     const include_fields = [
       "notifications",
-      "notificationSettings",
+      "settings",
       "groups",
       "followers",
       "followees",
@@ -606,7 +612,7 @@ describe("User functions", () => {
           .set({ ...headers, Authorization: `Bearer ${token}` });
         expect(response.status).toEqual(200);
         expect(response.body.notifications).toEqual(1);
-        expect(response.body.notificationSettings).toEqual(2);
+        expect(response.body.settings).toEqual(2);
         expect(response.body.groups).toEqual(0);
         expect(response.body.followers).toEqual(0);
         expect(response.body.followees).toEqual(0);

@@ -1,6 +1,6 @@
 export interface CountResponse {
   notifications?: number;
-  notificationSettings?: number;
+  settings?: number;
   groups?: number;
   followers?: number;
   followees?: number;

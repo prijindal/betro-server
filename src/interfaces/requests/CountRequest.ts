@@ -1,6 +1,6 @@
 export type CountIncludeType =
   | "notifications"
-  | "notificationSettings"
+  | "settings"
   | "groups"
   | "followers"
   | "followees"

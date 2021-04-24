@@ -133,12 +133,12 @@ CREATE TABLE posts (
     ON DELETE CASCADE
 );
 
-CREATE TYPE settings_notification_action as ENUM ('on_approved', 'on_followed');
+CREATE TYPE user_settings_action as ENUM ('on_approved', 'on_followed');
 
-CREATE TABLE settings_notifications (
+CREATE TABLE user_settings (
   id UUID DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL,
-  action settings_notification_action NOT NULL,
+  action user_settings_action NOT NULL,
   enabled BOOLEAN NOT NULL,
   CONSTRAINT fk_user
     FOREIGN KEY(user_id) 
@@ -150,7 +150,7 @@ CREATE TABLE settings_notifications (
 CREATE TABLE user_notifications (
   id UUID DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL,
-  action settings_notification_action NOT NULL,
+  action user_settings_action NOT NULL,
   content VARCHAR NOT NULL,
   payload JSONB NOT NULL,
   created_at timestamptz DEFAULT NOW(),

@@ -1,10 +1,8 @@
 import { UserSettingsAction } from "./UserSettingsAction";
 
-export interface UserNotification {
+export interface UserSettingPostgres {
   id: string;
   user_id: string;
   action: UserSettingsAction;
-  content: string;
-  payload: Record<string, unknown>;
-  created_at: Date;
+  enabled: boolean;
 }
