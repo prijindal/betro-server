@@ -133,7 +133,7 @@ CREATE TABLE posts (
     ON DELETE CASCADE
 );
 
-CREATE TYPE user_settings_action as ENUM ('on_approved', 'on_followed');
+CREATE TYPE user_settings_action as ENUM ('notification_on_approved', 'notification_on_followed');
 
 CREATE TABLE user_settings (
   id UUID DEFAULT gen_random_uuid(),
@@ -144,7 +144,8 @@ CREATE TABLE user_settings (
     FOREIGN KEY(user_id) 
     REFERENCES users(id)
     ON DELETE CASCADE,
-  PRIMARY KEY (id)
+  PRIMARY KEY (id),
+  UNIQUE (user_id, action)
 );
 
 CREATE TABLE user_notifications (

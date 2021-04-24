@@ -72,12 +72,12 @@ export const followUser = async (
             const user = users[0];
             const notificationEnabled = await checkUserSetting(
               followeeUser.id,
-              "on_followed"
+              "notification_on_followed"
             );
             if (notificationEnabled) {
               await createUserNotification(
                 followeeUser.id,
-                "on_followed",
+                "notification_on_followed",
                 `${user.username} asked to follow you`,
                 { username: user.username }
               );
@@ -325,12 +325,12 @@ export const approveUser = async (
               const user = users[0];
               const notificationEnabled = await checkUserSetting(
                 approval.user_id,
-                "on_approved"
+                "notification_on_approved"
               );
               if (notificationEnabled) {
                 await createUserNotification(
                   approval.user_id,
-                  "on_approved",
+                  "notification_on_approved",
                   `${user.username} has approved your follow request`,
                   { username: user.username }
                 );

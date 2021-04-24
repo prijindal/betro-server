@@ -304,7 +304,10 @@ describe("User functions", () => {
   it(
     "Enables notification settings",
     async () => {
-      const notification_settings = ["on_approved", "on_followed"];
+      const notification_settings = [
+        "notification_on_approved",
+        "notification_on_followed",
+      ];
       for (const email in tokenMap) {
         if (Object.prototype.hasOwnProperty.call(tokenMap, email)) {
           for (const notification_setting of notification_settings) {
@@ -331,7 +334,7 @@ describe("User functions", () => {
             .set({ ...headers, Authorization: `Bearer ${token}` });
           expect(response.status).toEqual(200);
           expect(response.body.length).toEqual(2);
-          expect(response.body[0].action).toEqual("on_approved");
+          expect(response.body[0].action).toEqual("notification_on_approved");
           expect(response.body[0].enabled).toEqual(true);
         }
       }
