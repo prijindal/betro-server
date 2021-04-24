@@ -87,6 +87,7 @@ CREATE TABLE group_follow_approvals (
     id uuid DEFAULT gen_random_uuid (),
     user_id uuid NOT NULL,
     followee_id uuid NOT NULL,/* This means user_id follows followee_id */
+    user_sym_key VARCHAR NOT NULL,
     group_sym_key VARCHAR,
     followee_sym_key VARCHAR,
     group_id uuid,

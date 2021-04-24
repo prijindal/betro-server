@@ -6,10 +6,21 @@ import { errorResponse } from "../util/responseHandler";
 import { PostsFeedResponse } from "../interfaces/responses/PostResponse";
 import { ErrorDataType } from "../constant/ErrorData";
 import { postProcessPosts } from "../service/FeedService";
+import postgres from "../db/postgres";
+import { RsaKeyPostgres } from "../interfaces/database/RsaKeyPostgres";
 
 export const userProfile = async (
   req: Request<{ username: string }>,
-  res: Response
+  res: Response<
+    | {
+        id: string;
+        username: string;
+        is_following: boolean;
+        is_approved: boolean;
+        public_key: string | null;
+      }
+    | ErrorDataType
+  >
 ): Promise<void> => {
   const own_id = res.locals.user_id;
   const username = req.params.username;
@@ -19,11 +30,20 @@ export const userProfile = async (
       res.status(404).send(errorResponse(404, "User not found"));
     } else {
       const isFollowing = await checkFollow(own_id, user.id);
+      let public_key: string | null = null;
+      if (isFollowing == null) {
+        const userRsaKey = await postgres<RsaKeyPostgres>("user_rsa_keys")
+          .select("public_key")
+          .where("id", user.key_id)
+          .first();
+        public_key = userRsaKey.public_key;
+      }
       res.status(200).send({
         id: user.id,
         username: user.username,
         is_following: isFollowing != null,
         is_approved: isFollowing != null && isFollowing.is_approved,
+        public_key: public_key,
       });
     }
   } catch (e) {
