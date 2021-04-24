@@ -1,4 +1,5 @@
 const ROUTES = {
+  FEED: "/api/feed",
   LOGIN: "/api/login",
   REGISTER: "/api/register",
   ACCOUNT: "/api/account",

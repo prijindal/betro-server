@@ -9,6 +9,7 @@ import { authAccesstoken } from "./middleware/authAccesstoken";
 
 import loginRoutes from "./routes/loginRoutes";
 import registerRoutes from "./routes/registerRoutes";
+import feedRoutes from "./routes/feedRoutes";
 import accountRoutes from "./routes/accountRoutes";
 import groupRoutes from "./routes/groupRoutes";
 import followRoutes from "./routes/followRoutes";
@@ -30,6 +31,7 @@ export async function initServer(): Promise<express.Express> {
 
   app.use(ROUTES.LOGIN, loginRateLimiter, loginRoutes);
   app.use(ROUTES.REGISTER, loginRateLimiter, registerRoutes);
+  app.use(ROUTES.FEED, authAccesstoken, userRateLimiter, feedRoutes);
   app.use(ROUTES.ACCOUNT, authAccesstoken, userRateLimiter, accountRoutes);
   app.use(ROUTES.GROUPS, authAccesstoken, userRateLimiter, groupRoutes);
   app.use(ROUTES.FOLLOW, authAccesstoken, userRateLimiter, followRoutes);
