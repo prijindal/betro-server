@@ -2,12 +2,9 @@ import { RsaKeyPostgres } from "../interfaces/database/RsaKeyPostgres";
 import { SymKeyPostgres } from "../interfaces/database/SymKeyPostgres";
 import postgres from "../db/postgres";
 
-export const createSymKey = async (
-  user_id: string,
-  sym_key: string
-): Promise<string> => {
+export const createSymKey = async (sym_key: string): Promise<string> => {
   const queryResult = await postgres<SymKeyPostgres>("user_sym_keys")
-    .insert({ user_id, sym_key })
+    .insert({ sym_key })
     .returning("*");
   return queryResult[0].id;
 };
@@ -25,12 +22,9 @@ export const getSymKeys = async (
   return keyMap;
 };
 
-export const deleteSymKey = async (
-  user_id: string,
-  key_id: string
-): Promise<boolean> => {
+export const deleteSymKey = async (key_id: string): Promise<boolean> => {
   const queryResult = await postgres<SymKeyPostgres>("user_sym_keys")
-    .where({ user_id, id: key_id })
+    .where({ id: key_id })
     .delete();
   return queryResult == 1;
 };

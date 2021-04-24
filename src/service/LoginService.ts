@@ -19,11 +19,12 @@ export const checkUserCredentials = async (
   email: string,
   password: string
 ): Promise<
-  { isValid: false } | { isValid: true; user_id: string; key_id: string }
+  | { isValid: false }
+  | { isValid: true; user_id: string; rsa_key_id: string; sym_key_id: string }
 > => {
   const queryResult = await postgres<UserPostgres>("users")
     .where({ email })
-    .select("id", "master_hash", "key_id");
+    .select("id", "master_hash", "rsa_key_id", "sym_key_id");
   if (queryResult.length == 0) {
     return { isValid: false };
   }
@@ -34,7 +35,8 @@ export const checkUserCredentials = async (
   return {
     isValid: true,
     user_id: queryResult[0].id,
-    key_id: queryResult[0].key_id,
+    rsa_key_id: queryResult[0].rsa_key_id,
+    sym_key_id: queryResult[0].sym_key_id,
   };
 };
 

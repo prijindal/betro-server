@@ -7,18 +7,29 @@ CREATE TABLE user_rsa_keys (
     PRIMARY KEY (id)
 );
 
+CREATE TABLE user_sym_keys (
+    id uuid DEFAULT gen_random_uuid (),
+    sym_key VARCHAR NOT NULL,
+    PRIMARY KEY (id)
+);
+
 CREATE TABLE users (
     id uuid DEFAULT gen_random_uuid (),
     email VARCHAR NOT NULL,
     username VARCHAR NOT NULL,
     master_hash VARCHAR UNIQUE NOT NULL,
-    key_id uuid NOT NULL,
+    rsa_key_id uuid NOT NULL,
+    sym_key_id uuid NOT NULL,
     PRIMARY KEY (id),
     UNIQUE(email),
     UNIQUE(username),
     CONSTRAINT fk_rsa_key
-      FOREIGN KEY(key_id) 
+      FOREIGN KEY(rsa_key_id) 
 	  REFERENCES user_rsa_keys(id)
+    ON DELETE CASCADE,
+    CONSTRAINT fk_sym_key
+      FOREIGN KEY(sym_key_id) 
+	  REFERENCES user_sym_keys(id)
     ON DELETE CASCADE
 );
 
@@ -37,21 +48,9 @@ CREATE TABLE access_tokens (
     ON DELETE CASCADE
 );
 
-CREATE TABLE user_sym_keys (
-    id uuid DEFAULT gen_random_uuid (),
-    user_id uuid NOT NULL,
-    sym_key VARCHAR NOT NULL,
-    PRIMARY KEY (id),
-    CONSTRAINT fk_user
-      FOREIGN KEY(user_id) 
-	  REFERENCES users(id)
-    ON DELETE CASCADE
-);
-
 CREATE TABLE user_profile (
   id uuid DEFAULT gen_random_uuid (),
   user_id uuid NOT NULL,
-  key_id uuid NOT NULL,
   first_name VARCHAR,
   last_name VARCHAR,
   profile_picture VARCHAR,
@@ -59,11 +58,7 @@ CREATE TABLE user_profile (
   CONSTRAINT fk_user
     FOREIGN KEY(user_id) 
   REFERENCES users(id)
-  ON DELETE CASCADE,
-  CONSTRAINT fk_sym_key
-      FOREIGN KEY(key_id) 
-	  REFERENCES user_sym_keys(id)
-    ON DELETE CASCADE
+  ON DELETE CASCADE
 );
 
 CREATE TABLE group_policies (

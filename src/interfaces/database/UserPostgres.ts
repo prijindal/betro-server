@@ -3,5 +3,6 @@ export interface UserPostgres {
   id: string;
   email: string;
   username: string;
-  key_id: string;
+  rsa_key_id: string;
+  sym_key_id: string;
 }

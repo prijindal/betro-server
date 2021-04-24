@@ -88,12 +88,14 @@ export const registerUser = async (
     if (emailAvailableResult && usernameAvailableResult) {
       const public_key = req.body.public_key;
       const private_key = req.body.private_key;
-      const key_id = await createRsaKeyPair(public_key, private_key);
+      const rsa_key_id = await createRsaKeyPair(public_key, private_key);
+      const sym_key_id = await createSymKey(req.body.sym_key);
       const response = await createUser(
         req.body.username,
         req.body.email,
         req.body.master_hash,
-        key_id
+        rsa_key_id,
+        sym_key_id
       );
       if (!req.body.inhibit_login) {
         res.status(200).send(response);
@@ -117,7 +119,6 @@ export const registerUser = async (
   } catch (e) {
     console.error(e);
     res.status(503).send(errorResponse(503));
-    next(e);
   }
 };
 
@@ -141,7 +142,8 @@ export const loginUser = async (
           req.body.device_display_name,
           req.headers
         );
-        const rsaKeys = await getRsaKeys([verifiedObject.key_id], true);
+        const rsaKeys = await getRsaKeys([verifiedObject.rsa_key_id], true);
+        const symKeys = await getSymKeys([verifiedObject.sym_key_id]);
         if (rsaKeys.length == 0) {
           res
             .status(404)
@@ -157,6 +159,7 @@ export const loginUser = async (
             device_id,
             public_key: rsaKeys[0].public_key,
             private_key: rsaKeys[0].private_key,
+            sym_key: symKeys[verifiedObject.sym_key_id],
           });
         }
       } catch (e) {
@@ -205,7 +208,7 @@ export const whoAmi = async (
   const user_id = res.locals.user_id;
   const users = await fetchUsers([res.locals.user_id]);
   if (users.length == 1) {
-    const keys = await getRsaKeys([users[0].key_id], true);
+    const keys = await getRsaKeys([users[0].rsa_key_id], true);
     if (keys.length == 1) {
       const response: WhoAmiResponse = {
         user_id,
@@ -236,18 +239,15 @@ export const getKeys = async (
     if (users.length == 0) {
       res.status(500).send(errorResponse(500));
     } else {
-      const keys = await getRsaKeys([users[0].key_id], true);
+      const keys = await getRsaKeys([users[0].rsa_key_id], true);
       if (keys.length == 0) {
         res.status(500).send(errorResponse(500));
       } else {
         const response: { private_key: string; sym_key?: string } = {
           private_key: keys[0].private_key,
         };
-        const profile = await fetchProfile(user_id, false);
-        if (profile != null) {
-          const sym_keys = await getSymKeys([profile.key_id]);
-          response.sym_key = sym_keys[profile.key_id];
-        }
+        const sym_keys = await getSymKeys([users[0].sym_key_id]);
+        response.sym_key = sym_keys[users[0].sym_key_id];
         res.status(200).send(response);
       }
     }
@@ -279,16 +279,17 @@ export const getProfile = async (
 ): Promise<void> => {
   const user_id = res.locals.user_id;
   try {
+    const users = await fetchUsers([user_id]);
     const profile = await fetchProfile(user_id);
     if (profile == null) {
       res.status(404).send(errorResponse(404, "User Profile not found"));
     } else {
-      const sym_key = await getSymKeys([profile.key_id]);
+      const sym_key = await getSymKeys([users[0].sym_key_id]);
       res.status(200).send({
         first_name: profile.first_name,
         last_name: profile.last_name,
         profile_picture: profile.profile_picture,
-        sym_key: sym_key[profile.key_id],
+        sym_key: sym_key[users[0].sym_key_id],
       });
     }
   } catch (e) {
@@ -301,7 +302,6 @@ export const postProfile = async (
     null,
     null,
     {
-      sym_key: string;
       first_name: string;
       last_name: string;
       profile_picture: string;
@@ -311,22 +311,21 @@ export const postProfile = async (
 ): Promise<void> => {
   const user_id = res.locals.user_id;
   try {
+    const users = await fetchUsers([user_id]);
     const profile = await fetchProfile(user_id);
     if (profile == null) {
-      const key_id = await createSymKey(user_id, req.body.sym_key);
       const updatedProfile = await createProfile(
         user_id,
-        key_id,
         req.body.first_name,
         req.body.last_name,
         req.body.profile_picture
       );
-      const sym_key = await getSymKeys([updatedProfile.key_id]);
+      const sym_key = await getSymKeys([users[0].sym_key_id]);
       res.status(200).send({
         first_name: updatedProfile.first_name,
         last_name: updatedProfile.last_name,
         profile_picture: updatedProfile.profile_picture,
-        sym_key: sym_key[updatedProfile.key_id],
+        sym_key: sym_key[users[0].sym_key_id],
       });
     } else {
       res.status(404).send(errorResponse(404));
@@ -351,6 +350,7 @@ export const putProfile = async (
 ): Promise<void> => {
   const user_id = res.locals.user_id;
   try {
+    const users = await fetchUsers([user_id]);
     const profile = await fetchProfile(user_id);
     if (profile == null) {
       res.status(404).send(errorResponse(404));
@@ -373,12 +373,12 @@ export const putProfile = async (
         last_name,
         profile_picture
       );
-      const sym_key = await getSymKeys([updatedProfile.key_id]);
+      const sym_key = await getSymKeys([users[0].sym_key_id]);
       res.status(200).send({
         first_name: updatedProfile.first_name,
         last_name: updatedProfile.last_name,
         profile_picture: updatedProfile.profile_picture,
-        sym_key: sym_key[updatedProfile.key_id],
+        sym_key: sym_key[users[0].sym_key_id],
       });
     }
   } catch (e) {

@@ -46,48 +46,39 @@ export const followUser = async (
           res.status(411).send(errorResponse(411, "Waiting for approval"));
         }
       } else {
-        const profile = await fetchProfile(user_id);
-        if (profile == null) {
-          res
-            .status(411)
-            .send(
-              errorResponse(411, "User must have a profile before following")
-            );
-        } else {
-          const followResponse = await postgres<FollowPostgres>(
-            "group_follow_approvals"
-          ).insert(
-            {
-              user_id,
-              followee_id: followeeUser.id,
-              user_sym_key: req.body.sym_key,
-            },
-            "*"
-          );
-          if (followResponse.length == 0) {
-            throw new Error();
-          }
-          const users = await fetchUsers([user_id]);
-          if (users.length == 1) {
-            const user = users[0];
-            const notificationEnabled = await checkUserSetting(
-              followeeUser.id,
-              "notification_on_followed"
-            );
-            if (notificationEnabled) {
-              await createUserNotification(
-                followeeUser.id,
-                "notification_on_followed",
-                `${user.username} asked to follow you`,
-                { username: user.username }
-              );
-            }
-          }
-          res.status(200).send({
-            is_approved: followResponse[0].is_approved,
-            id: followResponse[0].user_id,
-          });
+        const followResponse = await postgres<FollowPostgres>(
+          "group_follow_approvals"
+        ).insert(
+          {
+            user_id,
+            followee_id: followeeUser.id,
+            user_sym_key: req.body.sym_key,
+          },
+          "*"
+        );
+        if (followResponse.length == 0) {
+          throw new Error();
         }
+        const users = await fetchUsers([user_id]);
+        if (users.length == 1) {
+          const user = users[0];
+          const notificationEnabled = await checkUserSetting(
+            followeeUser.id,
+            "notification_on_followed"
+          );
+          if (notificationEnabled) {
+            await createUserNotification(
+              followeeUser.id,
+              "notification_on_followed",
+              `${user.username} asked to follow you`,
+              { username: user.username }
+            );
+          }
+        }
+        res.status(200).send({
+          is_approved: followResponse[0].is_approved,
+          id: followResponse[0].user_id,
+        });
       }
     }
   } catch (e) {
@@ -116,14 +107,14 @@ export const getApprovals = async (
     );
     const user_ids = data.map((a) => a.user_id);
     const users = await fetchUsers(user_ids);
-    const key_ids = users.map((a) => a.key_id);
-    const rsa_keys = await getRsaKeys(key_ids, false);
+    const rsa_key_ids = users.map((a) => a.rsa_key_id);
+    const rsa_keys = await getRsaKeys(rsa_key_ids, false);
     const profiles = await fetchProfiles(user_ids);
     const response: Array<ApprovalResponse> = [];
     data.forEach((approval) => {
       const user = users.find((a) => a.id == approval.user_id);
       if (user != null) {
-        const rsa_key = rsa_keys.find((a) => a.id == user.key_id);
+        const rsa_key = rsa_keys.find((a) => a.id == user.rsa_key_id);
         const profile = profiles.find((a) => a.user_id == user.id);
         if (rsa_key != null) {
           const row: ApprovalResponse = {
@@ -183,8 +174,8 @@ export const getFollowers = async (
     )
       .whereIn("followee_id", follower_ids)
       .andWhere({ user_id: user_id });
-    const user_key_ids = followers.map((a) => a.key_id);
-    const rsaKeys = await getRsaKeys(user_key_ids, false);
+    const user_rsa_key_ids = followers.map((a) => a.rsa_key_id);
+    const rsaKeys = await getRsaKeys(user_rsa_key_ids, false);
     const userProfiles = await fetchProfiles(follower_ids);
     const response: Array<FollowerResponse> = [];
     data.forEach((follow) => {
@@ -193,7 +184,7 @@ export const getFollowers = async (
       const isFollowing = isFollowings.find(
         (a) => a.followee_id == follow.user_id
       );
-      const rsaKey = rsaKeys.find((a) => a.id == follower.key_id);
+      const rsaKey = rsaKeys.find((a) => a.id == follower.rsa_key_id);
       let public_key: string | null;
       if (rsaKey != null) {
         public_key = rsaKey.public_key;

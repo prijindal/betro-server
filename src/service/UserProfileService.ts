@@ -10,7 +10,7 @@ export const fetchProfile = async (
 ): Promise<UserProfilePostgres | null> => {
   const query = postgres<UserProfilePostgres>("user_profile")
     .where({ user_id })
-    .select("id", "user_id", "key_id", "first_name", "last_name");
+    .select("id", "user_id", "first_name", "last_name");
   if (include_profile_picture) {
     query.select("profile_picture");
   }
@@ -23,13 +23,12 @@ export const fetchProfile = async (
 
 export const createProfile = async (
   user_id: string,
-  key_id: string,
   first_name: string,
   last_name: string,
   profile_picture: string
 ): Promise<UserProfilePostgres> => {
   const queryResult = await postgres<UserProfilePostgres>("user_profile")
-    .insert({ user_id, key_id, first_name, last_name, profile_picture })
+    .insert({ user_id, first_name, last_name, profile_picture })
     .returning("*");
   if (queryResult.length == 0) {
     throw new Error();

@@ -9,6 +9,7 @@ export type RegisterBody = {
   inhibit_login: boolean;
   public_key: string;
   private_key: string;
+  sym_key: string;
   device_id: string;
   initial_device_display_name: string;
 };
@@ -33,13 +34,14 @@ export const createUser = async (
   username: string,
   email: string,
   master_hash: string,
-  key_id: string
+  rsa_key_id: string,
+  sym_key_id: string
 ): Promise<{
   user_id: string;
 }> => {
   const hash = generateServerHash(master_hash);
   const queryResult = await postgres<UserPostgres>("users")
-    .insert({ username, email, master_hash: hash, key_id })
+    .insert({ username, email, master_hash: hash, rsa_key_id, sym_key_id })
     .returning("id");
   return {
     user_id: queryResult[0],

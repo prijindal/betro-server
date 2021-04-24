@@ -33,7 +33,7 @@ export const userProfile = async (
       if (isFollowing == null) {
         const userRsaKey = await postgres<RsaKeyPostgres>("user_rsa_keys")
           .select("public_key")
-          .where("id", user.key_id)
+          .where("id", user.rsa_key_id)
           .first();
         public_key = userRsaKey.public_key;
       }

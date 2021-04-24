@@ -12,9 +12,9 @@ const cleanAllTables = async () => {
     await trx.raw("DROP TABLE IF EXISTS group_follow_approvals;");
     await trx.raw("DROP TABLE IF EXISTS group_policies;");
     await trx.raw("DROP TABLE IF EXISTS user_profile;");
-    await trx.raw("DROP TABLE IF EXISTS user_sym_keys;");
     await trx.raw("DROP TABLE IF EXISTS access_tokens;");
     await trx.raw("DROP TABLE IF EXISTS users;");
+    await trx.raw("DROP TABLE IF EXISTS user_sym_keys;");
     await trx.raw("DROP TABLE IF EXISTS user_rsa_keys;");
     await trx.raw("DROP TABLE IF EXISTS migrations;");
     await trx.commit();

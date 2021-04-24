@@ -49,7 +49,7 @@ export const postGroup = async (
     if (groupsCount >= 20) {
       res.status(404).send(errorResponse(404, "Group limit reached"));
     } else {
-      const key_id = await createSymKey(user_id, req.body.sym_key);
+      const key_id = await createSymKey(req.body.sym_key);
       const group = await createGroup(
         user_id,
         key_id,
@@ -81,7 +81,7 @@ export const deleteGroup = async (
       res.status(404).send(errorResponse(404, "Group not found"));
     } else {
       const isGroupDeleted = await deleteUserGroup(user_id, group.id);
-      const isKeyDeleted = await deleteSymKey(user_id, group.key_id);
+      const isKeyDeleted = await deleteSymKey(group.key_id);
       if (!isKeyDeleted || !isGroupDeleted) {
         res.status(500).send(errorResponse(500));
       } else {
