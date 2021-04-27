@@ -1,5 +1,5 @@
 import { AppHandlerFunction } from "./expressHelper";
-import { UserProfileResponse } from "../interfaces/responses/UserProfileResponse";
+import { UserProfileResponse } from "../interfaces";
 import { fetchUsers } from "../service/UserService";
 import {
   createProfile,

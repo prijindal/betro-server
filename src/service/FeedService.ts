@@ -3,9 +3,9 @@ import { fetchUsers } from "../service/UserService";
 import {
   PostUserResponse,
   PostsFeedResponse,
-} from "../interfaces/responses/PostResponse";
-import { PostPostges } from "../interfaces/database/PostPostgres";
-import { FollowPostgres } from "../interfaces/database/FollowPostgres";
+  PostPostges,
+  FollowPostgres,
+} from "../interfaces";
 import { fetchProfiles } from "./UserProfileService";
 
 export const postProcessPosts = async (

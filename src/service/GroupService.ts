@@ -1,5 +1,5 @@
 import postgres from "../db/postgres";
-import { GroupPostgres } from "../interfaces/database/GroupPostgres";
+import { GroupPostgres } from "../interfaces";
 
 export const fetchUserGroup = async (
   user_id: string,

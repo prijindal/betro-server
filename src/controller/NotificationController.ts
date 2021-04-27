@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { fetchUserNotifications } from "../service/NotificationService";
 import { errorResponse } from "../util/responseHandler";
 import { ErrorDataType } from "../constant/ErrorData";
-import { NotificationResponse } from "../interfaces/responses/NotificationResponse";
+import { NotificationResponse } from "../interfaces";
 
 export const getNotifications = async (
   req: Request,

@@ -8,10 +8,12 @@ import {
 } from "../service/GroupService";
 import { errorResponse } from "../util/responseHandler";
 import { ErrorDataType } from "../constant/ErrorData";
-import { GroupResponse } from "../interfaces/responses/GroupResponse";
-import { GroupCreateRequest } from "../interfaces/requests/GroupCreateRequest";
 import { tableCount } from "../service/helper";
-import { GroupPostgres } from "../interfaces/database/GroupPostgres";
+import {
+  GroupCreateRequest,
+  GroupPostgres,
+  GroupResponse,
+} from "../interfaces";
 
 export const getGroups = async (
   req: Request,

@@ -9,16 +9,18 @@ import {
   PostProfileHandler,
   PutProfileHandler,
 } from "../controller/ProfileController";
-import { UserProfileResponse } from "../interfaces/responses/UserProfileResponse";
 import {
   GetCountsHandler,
   GetKeysHandler,
   WhoAmiHandler,
 } from "../controller/AccountController";
-import { WhoAmiResponse } from "../interfaces/responses/WhoAmiResponse";
-import { CountResponse } from "../interfaces/responses/CountResponse";
+import {
+  WhoAmiResponse,
+  UserProfileResponse,
+  CountResponse,
+  PostsFeedResponse,
+} from "../interfaces";
 import { FetchOwnPostsHandler } from "../controller/FeedController";
-import { PostsFeedResponse } from "../interfaces/responses/PostResponse";
 
 const router = Router();
 

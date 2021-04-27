@@ -2,10 +2,12 @@ import { AppHandlerFunction } from "./expressHelper";
 import { fetchUsers } from "../service/UserService";
 import { fetchProfile } from "../service/UserProfileService";
 import { getRsaKeys, getSymKeys } from "../service/KeyService";
-import { WhoAmiResponse } from "../interfaces/responses/WhoAmiResponse";
-import { CountResponse } from "../interfaces/responses/CountResponse";
-import { CountIncludeType } from "../interfaces/requests/CountRequest";
-import { FollowPostgres } from "../interfaces/database/FollowPostgres";
+import {
+  WhoAmiResponse,
+  CountResponse,
+  CountIncludeType,
+  FollowPostgres,
+} from "../interfaces";
 import { tableCount } from "../service/helper";
 
 export const WhoAmiHandler: AppHandlerFunction<

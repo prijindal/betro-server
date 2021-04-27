@@ -3,13 +3,15 @@ import { fetchUserPosts } from "../service/PostService";
 import { checkFollow } from "../service/FollowService";
 import { fetchUserByUsername } from "../service/UserService";
 import { errorResponse } from "../util/responseHandler";
-import { PostsFeedResponse } from "../interfaces/responses/PostResponse";
+import {
+  PostsFeedResponse,
+  RsaKeyPostgres,
+  UserInfoResponse,
+  FollowPostgres,
+} from "../interfaces";
 import { ErrorDataType } from "../constant/ErrorData";
 import { postProcessPosts } from "../service/FeedService";
 import postgres from "../db/postgres";
-import { RsaKeyPostgres } from "../interfaces/database/RsaKeyPostgres";
-import { UserInfoResponse } from "../interfaces/responses/UserInfoResponse";
-import { FollowPostgres } from "../interfaces/database/FollowPostgres";
 import { fetchProfile } from "../service/UserProfileService";
 
 export const userProfile = async (

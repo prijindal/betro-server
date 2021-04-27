@@ -1,5 +1,5 @@
 import postgres from "../db/postgres";
-import { UserProfilePostgres } from "../interfaces/database/UserProfilePostgres";
+import { UserProfilePostgres } from "../interfaces";
 
 export const fetchProfiles = async (user_ids: Array<string>) =>
   postgres<UserProfilePostgres>("user_profile").whereIn("user_id", user_ids);

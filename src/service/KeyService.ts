@@ -1,6 +1,5 @@
-import { RsaKeyPostgres } from "../interfaces/database/RsaKeyPostgres";
-import { SymKeyPostgres } from "../interfaces/database/SymKeyPostgres";
 import postgres from "../db/postgres";
+import { RsaKeyPostgres, SymKeyPostgres } from "../interfaces";
 
 export const createSymKey = async (sym_key: string): Promise<string> => {
   const queryResult = await postgres<SymKeyPostgres>("user_sym_keys")

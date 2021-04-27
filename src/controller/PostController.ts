@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import {} from "../service/PostService";
 import { errorResponse } from "../util/responseHandler";
-import { PostCreateRequest } from "../interfaces/requests/PostCreateRequest";
+import { PostCreateRequest } from "../interfaces";
 import { fetchGroups } from "../service/GroupService";
 import { createPostDatabase } from "../service/PostService";
 

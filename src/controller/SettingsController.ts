@@ -1,11 +1,13 @@
 import { Request, Response } from "express";
 import { errorResponse } from "../util/responseHandler";
 import { ErrorDataType } from "../constant/ErrorData";
-import { UserSettingResponse } from "../interfaces/responses/UserSettingResponse";
+import {
+  UserSettingResponse,
+  UserSettingsAction,
+  UserSettingPostgres,
+} from "../interfaces";
 import { fetchUserSettings } from "../service/SettingsService";
-import { UserSettingsAction } from "../interfaces/database/UserSettingsAction";
 import postgres from "../db/postgres";
-import { UserSettingPostgres } from "../interfaces/database/UserSettingPostgres";
 
 export const getUserSettings = async (
   req: Request,

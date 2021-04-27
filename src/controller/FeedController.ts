@@ -1,15 +1,15 @@
 import { Request, Response } from "express";
 import { errorResponse } from "../util/responseHandler";
-import {
-  PostResponse,
-  PostsFeedResponse,
-} from "../interfaces/responses/PostResponse";
 import { ErrorDataType } from "../constant/ErrorData";
 import { postProcessPosts } from "../service/FeedService";
 import postgres from "../db/postgres";
-import { FollowPostgres } from "../interfaces/database/FollowPostgres";
-import { GroupPostgres } from "src/interfaces/database/GroupPostgres";
-import { PostPostges } from "src/interfaces/database/PostPostgres";
+import {
+  PostResponse,
+  PostsFeedResponse,
+  FollowPostgres,
+  GroupPostgres,
+  PostPostges,
+} from "../interfaces";
 import { AppHandlerFunction } from "./expressHelper";
 import { fetchUserPosts } from "../service/PostService";
 import { fetchUserGroups } from "../service/GroupService";

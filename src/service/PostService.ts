@@ -1,5 +1,5 @@
 import postgres from "../db/postgres";
-import { PostPostges } from "../interfaces/database/PostPostgres";
+import { PostPostges } from "../interfaces";
 
 export const fetchUserPosts = async (
   user_id: string
