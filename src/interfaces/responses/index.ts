@@ -1,7 +1,4 @@
-export * from "./ApprovalResponse";
 export * from "./CountResponse";
-export * from "./FolloweeResponse";
-export * from "./FollowerResponse";
 export * from "./FollowResponse";
 export * from "./GroupResponse";
 export * from "./NotificationResponse";

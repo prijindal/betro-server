@@ -1,22 +1,28 @@
 /* /api/groups */
 import { Router } from "express";
 import {
-  getGroups,
-  postGroup,
-  deleteGroup,
+  GetGroupsHandler,
+  PostGroupHandler,
+  DeleteGroupHandler,
 } from "../controller/GroupController";
 import GroupValidation from "../validation/GroupValidation";
 import { validateRequest } from "../middleware/validateRequest";
+import { expressWrapper } from "../controller/expressHelper";
 
 const router = Router();
 
-router.get("/", getGroups);
-router.post("/", GroupValidation.create(), validateRequest, postGroup);
+router.get("/", expressWrapper(GetGroupsHandler));
+router.post(
+  "/",
+  GroupValidation.create(),
+  validateRequest,
+  expressWrapper(PostGroupHandler)
+);
 router.delete(
   "/:group_id",
   GroupValidation.delete(),
   validateRequest,
-  deleteGroup
+  expressWrapper(DeleteGroupHandler)
 );
 
 export default router;

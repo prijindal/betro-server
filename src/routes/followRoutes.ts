@@ -4,13 +4,17 @@ import {
   GetApprovalsHandler,
   GetFollowersHandler,
   GetFolloweesHandler,
+} from "../controller/FollowController";
+import {
   ApproveUserHandler,
   FollowUserHandler,
-} from "../controller/FollowController";
+  FollowRequest,
+  ApproveRequest,
+} from "../controller/FollowController/action";
 import FollowValidation from "../validation/FollowValidation";
 import { validateRequest } from "../middleware/validateRequest";
 import { expressWrapper } from "../controller/expressHelper";
-import { FollowResponse, FollowRequest, ApproveRequest } from "../interfaces";
+import { FollowResponse } from "../interfaces";
 
 const router = Router();
 
