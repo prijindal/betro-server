@@ -17,15 +17,32 @@ export const tableCount = async <T extends { id: string }>(
 };
 
 const base64ToDate = (b64: string): Date | undefined => {
-  const date = new Date(Buffer.from(b64, "base64").toString("utf-8"));
-  if (date instanceof Date && !isNaN(date.valueOf())) {
-    return date;
+  if (!isNil(b64) && !isEmpty(b64)) {
+    const date = new Date(Buffer.from(b64, "base64").toString("utf-8"));
+    if (date instanceof Date && !isNaN(date.valueOf())) {
+      return date;
+    }
+    return undefined;
   }
   return undefined;
 };
 
 const dateToBase64 = (date: Date): string => {
   return Buffer.from(date.toISOString(), "utf-8").toString("base64");
+};
+
+const limitToInt = (limitStr: string): number => {
+  let limit: number;
+  try {
+    limit = parseInt(limitStr, 10);
+  } catch (e) {
+    limit = 50;
+  } finally {
+    if (isNaN(limit)) {
+      limit = 50;
+    }
+  }
+  return limit;
 };
 
 export const UserPaginationWrapper = async <
@@ -42,21 +59,9 @@ export const UserPaginationWrapper = async <
   after: string;
   next: boolean;
 }> => {
-  let after: Date | undefined;
-  if (afterStr != null && !isNil(afterStr) && !isEmpty(afterStr)) {
-    after = base64ToDate(afterStr);
-  }
+  const after: Date | undefined = base64ToDate(afterStr);
   const totalCount = await tableCount<T>(table, where);
-  let limit = 50;
-  try {
-    limit = parseInt(limitStr, 10);
-  } catch (e) {
-    limit = 50;
-  } finally {
-    if (isNaN(limit)) {
-      limit = 50;
-    }
-  }
+  const limit = limitToInt(limitStr);
   const responseQuery: Knex.QueryBuilder<T> = postgres<T>(table)
     .select("*")
     .orderBy("created_at", "desc")

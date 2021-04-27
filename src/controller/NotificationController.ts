@@ -2,7 +2,7 @@ import {
   fetchUserNotifications,
   createUserNotification,
 } from "../service/NotificationService";
-import { UserSettingsAction } from "../interfaces/database";
+import { UserSettingsAction } from "..///interfaces/database";
 import { checkUserSetting } from "../service/SettingsService";
 import { AppHandlerFunction } from "./expressHelper";
 

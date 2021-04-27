@@ -37,17 +37,16 @@ export const FollowUserHandler: AppHandlerFunction<
       .where({ user_id, followee_id: followeeUser.id })
       .first();
     if (isFollowing != null) {
-      if (isFollowing.is_approved) {
-        return {
-          error: { status: 411, message: "Already following", data: null },
-          response: null,
-        };
-      } else {
-        return {
-          error: { status: 411, message: "Waiting for approval", data: null },
-          response: null,
-        };
-      }
+      return {
+        error: {
+          status: 411,
+          message: isFollowing.is_approved
+            ? "Already following"
+            : "Waiting for approval",
+          data: null,
+        },
+        response: null,
+      };
     } else {
       const followResponse = await postgres<FollowPostgres>(
         "group_follow_approvals"
@@ -59,9 +58,6 @@ export const FollowUserHandler: AppHandlerFunction<
         },
         "*"
       );
-      if (followResponse.length == 0) {
-        throw new Error();
-      }
       const users = await fetchUsers([user_id]);
       if (users.length == 1) {
         const user = users[0];
@@ -103,76 +99,54 @@ export const ApproveUserHandler: AppHandlerFunction<
     .where({ followee_id: user_id, id: follow_id })
     .select("id", "is_approved", "user_id")
     .first();
-  if (approval == null) {
+  if (approval == null || approval.is_approved) {
     return {
       error: {
         status: 404,
-        message: "No follow like this",
+        message: approval.is_approved
+          ? "Already approved"
+          : "No follow like this",
         data: null,
       },
       response: null,
     };
   } else {
-    if (approval.is_approved) {
+    const group = await fetchUserGroup(user_id, group_id);
+    const profile = await fetchProfile(user_id);
+    if (group == null || profile == null) {
       return {
         error: {
           status: 404,
-          message: "Already approved",
+          message: "Group not found",
           data: null,
         },
         response: null,
       };
     } else {
-      const group = await fetchUserGroup(user_id, group_id);
-      if (group == null) {
-        return {
-          error: {
-            status: 404,
-            message: "Group not found",
-            data: null,
-          },
-          response: null,
-        };
-      } else {
-        const profile = await fetchProfile(user_id);
-        if (profile == null) {
-          return {
-            error: {
-              status: 404,
-              message: "User must have a valid profile before approving",
-              data: null,
-            },
-            response: null,
-          };
-        } else {
-          const approved = await postgres<FollowPostgres>(
-            "group_follow_approvals"
-          )
-            .where({ followee_id: user_id, id: follow_id })
-            .update({
-              is_approved: true,
-              group_id,
-              group_sym_key,
-              followee_sym_key,
-            });
-          const users = await fetchUsers([user_id]);
-          if (users.length == 1) {
-            const user = users[0];
-            await sendUserNotification(
-              approval.user_id,
-              "notification_on_approved",
-              `${user.username} has approved your follow request`,
-              { username: user.username }
-            );
-          }
-          return {
-            response: {
-              approved: approved === 1,
-            },
-            error: null,
-          };
-        }
+      const approved = await postgres<FollowPostgres>("group_follow_approvals")
+        .where({ followee_id: user_id, id: follow_id })
+        .update({
+          is_approved: true,
+          group_id,
+          group_sym_key,
+          followee_sym_key,
+        });
+      const users = await fetchUsers([user_id]);
+      if (users.length == 1) {
+        const user = users[0];
+        await sendUserNotification(
+          approval.user_id,
+          "notification_on_approved",
+          `${user.username} has approved your follow request`,
+          { username: user.username }
+        );
       }
+      return {
+        response: {
+          approved: approved === 1,
+        },
+        error: null,
+      };
     }
   }
 };
