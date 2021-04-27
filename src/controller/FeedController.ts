@@ -1,12 +1,19 @@
 import { Request, Response } from "express";
 import { errorResponse } from "../util/responseHandler";
-import { PostsFeedResponse } from "../interfaces/responses/PostResponse";
+import {
+  PostResponse,
+  PostsFeedResponse,
+} from "../interfaces/responses/PostResponse";
 import { ErrorDataType } from "../constant/ErrorData";
 import { postProcessPosts } from "../service/FeedService";
 import postgres from "../db/postgres";
 import { FollowPostgres } from "../interfaces/database/FollowPostgres";
 import { GroupPostgres } from "src/interfaces/database/GroupPostgres";
 import { PostPostges } from "src/interfaces/database/PostPostgres";
+import { AppHandlerFunction } from "./expressHelper";
+import { fetchUserPosts } from "../service/PostService";
+import { fetchUserGroups } from "../service/GroupService";
+import { getSymKeys } from "../service/KeyService";
 
 export const getHomeFeed = async (
   req: Request,
@@ -59,4 +66,35 @@ export const getHomeFeed = async (
     console.error(e);
     res.status(503).send(errorResponse(503));
   }
+};
+
+export const FetchOwnPostsHandler: AppHandlerFunction<
+  { user_id: string },
+  PostsFeedResponse
+> = async (req) => {
+  const own_id = req.user_id;
+  const postsResponse = await fetchUserPosts(own_id);
+  const groups = await fetchUserGroups(own_id);
+  const keys = await getSymKeys(groups.map((a) => a.key_id));
+  const posts: Array<PostResponse> = [];
+  for (const post of postsResponse) {
+    posts.push({
+      id: post.id,
+      user_id: post.user_id,
+      media_content: post.media_content,
+      media_encoding: post.media_encoding,
+      text_content: post.text_content,
+      key_id: post.key_id,
+      created_at: post.created_at,
+    });
+  }
+  const feed: PostsFeedResponse = {
+    posts,
+    keys,
+    users: {},
+  };
+  return {
+    response: feed,
+    error: null,
+  };
 };

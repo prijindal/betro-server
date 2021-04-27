@@ -1,8 +1,6 @@
-import { Request, Response } from "express";
 import { v4 as uuidv4 } from "uuid";
 import { isEmpty } from "lodash";
 import jsonwebtoken from "jsonwebtoken";
-import { errorResponse } from "../util/responseHandler";
 import {
   LoginBody,
   checkUserCredentials,
@@ -10,14 +8,6 @@ import {
 } from "../service/LoginService";
 import { SECRET } from "../config";
 import { getRsaKeys, getSymKeys } from "../service/KeyService";
-import { fetchUsers } from "../service/UserService";
-import { ErrorDataType } from "../constant/ErrorData";
-import {
-  PostsFeedResponse,
-  PostResponse,
-} from "../interfaces/responses/PostResponse";
-import { fetchUserPosts } from "../service/PostService";
-import { fetchUserGroups } from "../service/GroupService";
 import { AppHandlerFunction } from "./expressHelper";
 
 export const LoginUserHandler: AppHandlerFunction<
@@ -101,64 +91,4 @@ export const loginHelper = async (
   );
   // Create access token and send
   return { token, device_id };
-};
-
-export const getKeys = async (
-  req: Request,
-  res: Response<{ private_key: string; sym_key?: string } | ErrorDataType>
-): Promise<void> => {
-  const user_id = res.locals.user_id;
-  try {
-    const users = await fetchUsers([user_id]);
-    if (users.length == 0) {
-      res.status(500).send(errorResponse(500));
-    } else {
-      const keys = await getRsaKeys([users[0].rsa_key_id], true);
-      if (keys.length == 0) {
-        res.status(500).send(errorResponse(500));
-      } else {
-        const response: { private_key: string; sym_key?: string } = {
-          private_key: keys[0].private_key,
-        };
-        const sym_keys = await getSymKeys([users[0].sym_key_id]);
-        response.sym_key = sym_keys[users[0].sym_key_id];
-        res.status(200).send(response);
-      }
-    }
-  } catch (e) {
-    res.status(503).send(errorResponse(503));
-  }
-};
-
-export const fetchOwnPosts = async (
-  req: Request,
-  res: Response<PostsFeedResponse | ErrorDataType>
-): Promise<void> => {
-  const own_id = res.locals.user_id;
-  try {
-    const postsResponse = await fetchUserPosts(own_id);
-    const groups = await fetchUserGroups(own_id);
-    const keys = await getSymKeys(groups.map((a) => a.key_id));
-    const posts: Array<PostResponse> = [];
-    for (const post of postsResponse) {
-      posts.push({
-        id: post.id,
-        user_id: post.user_id,
-        media_content: post.media_content,
-        media_encoding: post.media_encoding,
-        text_content: post.text_content,
-        key_id: post.key_id,
-        created_at: post.created_at,
-      });
-    }
-    const feed: PostsFeedResponse = {
-      posts,
-      keys,
-      users: {},
-    };
-    res.status(200).send(feed);
-  } catch (e) {
-    console.error(e);
-    res.status(503).send(errorResponse(503));
-  }
 };

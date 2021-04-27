@@ -1,7 +1,6 @@
 /* /api/account */
 import { Router } from "express";
 import AccountValidation from "../validation/AccountValidation";
-import { getKeys, fetchOwnPosts } from "../controller/LoginController";
 import { validateRequest } from "../middleware/validateRequest";
 import { expressWrapper } from "../controller/expressHelper";
 import {
@@ -13,10 +12,13 @@ import {
 import { UserProfileResponse } from "../interfaces/responses/UserProfileResponse";
 import {
   GetCountsHandler,
+  GetKeysHandler,
   WhoAmiHandler,
 } from "../controller/AccountController";
 import { WhoAmiResponse } from "../interfaces/responses/WhoAmiResponse";
 import { CountResponse } from "../interfaces/responses/CountResponse";
+import { FetchOwnPostsHandler } from "../controller/FeedController";
+import { PostsFeedResponse } from "../interfaces/responses/PostResponse";
 
 const router = Router();
 
@@ -24,7 +26,12 @@ router.get(
   "/whoami",
   expressWrapper<{}, WhoAmiResponse, {}, {}>(WhoAmiHandler)
 );
-router.get("/keys", getKeys);
+router.get(
+  "/keys",
+  expressWrapper<{}, { private_key: string; sym_key: string }, {}, {}>(
+    GetKeysHandler
+  )
+);
 router.get(
   "/count",
   expressWrapper<{}, CountResponse, {}, { include_fields: string }>(
@@ -71,6 +78,9 @@ router.put(
   >(PutProfileHandler)
 );
 
-router.get("/posts", fetchOwnPosts);
+router.get(
+  "/whoami",
+  expressWrapper<{}, PostsFeedResponse, {}, {}>(FetchOwnPostsHandler)
+);
 
 export default router;
