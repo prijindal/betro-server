@@ -1,12 +1,7 @@
 /* /api/account */
 import { Router } from "express";
 import AccountValidation from "../validation/AccountValidation";
-import {
-  whoAmi,
-  getKeys,
-  fetchCounts,
-  fetchOwnPosts,
-} from "../controller/LoginController";
+import { getKeys, fetchOwnPosts } from "../controller/LoginController";
 import { validateRequest } from "../middleware/validateRequest";
 import { expressWrapper } from "../controller/expressHelper";
 import {
@@ -16,12 +11,26 @@ import {
   PutProfileHandler,
 } from "../controller/ProfileController";
 import { UserProfileResponse } from "../interfaces/responses/UserProfileResponse";
+import {
+  GetCountsHandler,
+  WhoAmiHandler,
+} from "../controller/AccountController";
+import { WhoAmiResponse } from "../interfaces/responses/WhoAmiResponse";
+import { CountResponse } from "../interfaces/responses/CountResponse";
 
 const router = Router();
 
-router.get("/whoami", whoAmi);
+router.get(
+  "/whoami",
+  expressWrapper<{}, WhoAmiResponse, {}, {}>(WhoAmiHandler)
+);
 router.get("/keys", getKeys);
-router.get("/count", fetchCounts);
+router.get(
+  "/count",
+  expressWrapper<{}, CountResponse, {}, { include_fields: string }>(
+    GetCountsHandler
+  )
+);
 
 router.get(
   "/profile_picture",

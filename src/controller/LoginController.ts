@@ -11,13 +11,7 @@ import {
 import { SECRET } from "../config";
 import { getRsaKeys, getSymKeys } from "../service/KeyService";
 import { fetchUsers } from "../service/UserService";
-import { fetchProfile } from "../service/UserProfileService";
 import { ErrorDataType } from "../constant/ErrorData";
-import { WhoAmiResponse } from "../interfaces/responses/WhoAmiResponse";
-import { CountResponse } from "../interfaces/responses/CountResponse";
-import { CountIncludeType } from "../interfaces/requests/CountRequest";
-import { tableCount } from "../service/helper";
-import { FollowPostgres } from "../interfaces/database/FollowPostgres";
 import {
   PostsFeedResponse,
   PostResponse,
@@ -109,34 +103,6 @@ export const loginHelper = async (
   return { token, device_id };
 };
 
-export const whoAmi = async (
-  req: Request,
-  res: Response<WhoAmiResponse | ErrorDataType>
-): Promise<void> => {
-  const user_id = res.locals.user_id;
-  const users = await fetchUsers([res.locals.user_id]);
-  if (users.length == 1) {
-    const keys = await getRsaKeys([users[0].rsa_key_id], true);
-    if (keys.length == 1) {
-      const response: WhoAmiResponse = {
-        user_id,
-        email: users[0].email,
-        username: users[0].username,
-      };
-      const profile = await fetchProfile(user_id, false);
-      if (profile != null) {
-        response.first_name = profile.first_name;
-        response.last_name = profile.last_name;
-      }
-      res.status(200).send(response);
-    } else {
-      res.status(503).send(errorResponse(503));
-    }
-  } else {
-    res.status(503).send(errorResponse(503));
-  }
-};
-
 export const getKeys = async (
   req: Request,
   res: Response<{ private_key: string; sym_key?: string } | ErrorDataType>
@@ -159,67 +125,6 @@ export const getKeys = async (
         res.status(200).send(response);
       }
     }
-  } catch (e) {
-    res.status(503).send(errorResponse(503));
-  }
-};
-
-export const fetchCounts = async (
-  req: Request<
-    null,
-    null,
-    null,
-    {
-      include_fields: string;
-    }
-  >,
-  res: Response<CountResponse | ErrorDataType>
-): Promise<void> => {
-  const user_id = res.locals.user_id;
-  try {
-    const response: CountResponse = {};
-    const includeFieldsString = req.query.include_fields;
-    const include_fields: Array<CountIncludeType> = includeFieldsString.split(
-      ","
-    ) as Array<CountIncludeType>;
-    const tableMapping: { [k: string]: string } = {
-      notifications: "user_notifications",
-      settings: "user_settings",
-      groups: "group_policies",
-      followees: "group_follow_approvals",
-      posts: "posts",
-    };
-    const promises: Array<Promise<number>> = [];
-    for (const include_field of include_fields) {
-      if (include_field == "followers") {
-        promises.push(
-          tableCount<FollowPostgres>("group_follow_approvals", {
-            followee_id: user_id,
-            is_approved: true,
-          })
-        );
-      } else if (include_field == "approvals") {
-        promises.push(
-          tableCount<FollowPostgres>("group_follow_approvals", {
-            followee_id: user_id,
-            is_approved: false,
-          })
-        );
-      } else {
-        const table = tableMapping[include_field];
-        if (table != null) {
-          promises.push(
-            tableCount<{ user_id: string; id: string }>(table, { user_id })
-          );
-        }
-      }
-    }
-    const resp = await Promise.all(promises);
-    for (let index = 0; index < include_fields.length; index++) {
-      const include_field = include_fields[index];
-      response[include_field] = resp[index];
-    }
-    res.status(200).send(response);
   } catch (e) {
     res.status(503).send(errorResponse(503));
   }
