@@ -1,9 +1,10 @@
 /* /api/notifications */
 import { Router } from "express";
-import { getNotifications } from "../controller/NotificationController";
+import { expressWrapper } from "../controller/expressHelper";
+import { GetNotificationsHandler } from "../controller/NotificationController";
 
 const router = Router();
 
-router.get("/", getNotifications);
+router.get("/", expressWrapper(GetNotificationsHandler));
 
 export default router;

@@ -1,5 +1,4 @@
 import { AppHandlerFunction } from "./expressHelper";
-import { UserProfileResponse } from "../interfaces";
 import { fetchUsers } from "../service/UserService";
 import {
   createProfile,
@@ -31,6 +30,13 @@ export const GetProfilePictureHandler: AppHandlerFunction<
     };
   }
 };
+
+export interface UserProfileResponse {
+  first_name: string;
+  last_name: string;
+  profile_picture: string;
+  sym_key: string;
+}
 
 export const GetProfileHandler: AppHandlerFunction<
   { user_id: string },

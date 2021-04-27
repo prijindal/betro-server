@@ -10,11 +10,11 @@ import {
   FollowUserHandler,
   FollowRequest,
   ApproveRequest,
+  FollowResponse,
 } from "../controller/FollowController/action";
 import FollowValidation from "../validation/FollowValidation";
 import { validateRequest } from "../middleware/validateRequest";
 import { expressWrapper } from "../controller/expressHelper";
-import { FollowResponse } from "../interfaces";
 
 const router = Router();
 

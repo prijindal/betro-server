@@ -2,8 +2,16 @@ import { AppHandlerFunction } from "./expressHelper";
 import { fetchUsers } from "../service/UserService";
 import { fetchProfile } from "../service/UserProfileService";
 import { getRsaKeys, getSymKeys } from "../service/KeyService";
-import { WhoAmiResponse, CountResponse, FollowPostgres } from "../interfaces";
+import { FollowPostgres } from "../interfaces/database";
 import { tableCount } from "../service/helper";
+
+export interface WhoAmiResponse {
+  user_id: string;
+  username: string;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+}
 
 export const WhoAmiHandler: AppHandlerFunction<
   { user_id: string },
@@ -58,6 +66,16 @@ export type CountIncludeType =
   | "followees"
   | "approvals"
   | "posts";
+
+export interface CountResponse {
+  notifications?: number;
+  settings?: number;
+  groups?: number;
+  followers?: number;
+  followees?: number;
+  approvals?: number;
+  posts?: number;
+}
 
 export const GetCountsHandler: AppHandlerFunction<
   { user_id: string; include_fields: string },

@@ -1,12 +1,19 @@
-import { Request, Response } from "express";
 import {
   fetchUserNotifications,
   createUserNotification,
 } from "../service/NotificationService";
-import { errorResponse } from "../util/responseHandler";
-import { ErrorDataType } from "../constant/ErrorData";
-import { NotificationResponse, UserSettingsAction } from "../interfaces";
+import { UserSettingsAction } from "../interfaces/database";
 import { checkUserSetting } from "../service/SettingsService";
+import { AppHandlerFunction } from "./expressHelper";
+
+export interface NotificationResponse {
+  id: string;
+  user_id: string;
+  action: UserSettingsAction;
+  content: string;
+  payload: Record<string, unknown>;
+  created_at: Date;
+}
 
 export const sendUserNotification = async (
   user_id: string,
@@ -20,16 +27,14 @@ export const sendUserNotification = async (
   }
 };
 
-export const getNotifications = async (
-  req: Request,
-  res: Response<Array<NotificationResponse> | ErrorDataType>
-): Promise<void> => {
-  const user_id = res.locals.user_id;
-  try {
-    const notifications = await fetchUserNotifications(user_id);
-    res.status(200).send(notifications);
-  } catch (e) {
-    console.error(e);
-    res.status(503).send(errorResponse(503));
-  }
+export const GetNotificationsHandler: AppHandlerFunction<
+  { user_id: string },
+  Array<NotificationResponse>
+> = async (req) => {
+  const user_id = req.user_id;
+  const notifications = await fetchUserNotifications(user_id);
+  return {
+    response: notifications,
+    error: null,
+  };
 };

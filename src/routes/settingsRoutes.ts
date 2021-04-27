@@ -1,21 +1,22 @@
 /* /api/settings */
 import { Router } from "express";
 import {
-  getUserSettings,
-  saveUserSetting,
+  GetUserSettingsHandler,
+  SaveUserSettingHandler,
 } from "../controller/SettingsController";
 import SettingsValidation from "../validation/SettingsValidation";
 import { validateRequest } from "../middleware/validateRequest";
+import { expressWrapper } from "../controller/expressHelper";
 
 const router = Router();
 
-router.get("/", getUserSettings);
+router.get("/", expressWrapper(GetUserSettingsHandler));
 
 router.post(
   "/",
   SettingsValidation.saveNotification(),
   validateRequest,
-  saveUserSetting
+  expressWrapper(SaveUserSettingHandler)
 );
 
 export default router;

@@ -6,8 +6,15 @@ import {
   createGroup,
 } from "../service/GroupService";
 import { tableCount } from "../service/helper";
-import { GroupPostgres, GroupResponse } from "../interfaces";
+import { GroupPostgres } from "../interfaces/database";
 import { AppHandlerFunction } from "./expressHelper";
+
+export interface GroupResponse {
+  id: string;
+  sym_key: string;
+  name: string;
+  is_default: boolean;
+}
 
 export const GetGroupsHandler: AppHandlerFunction<
   { user_id: string },

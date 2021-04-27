@@ -1,8 +1,10 @@
 /* /api/user */
 import { Router } from "express";
-import { userProfile, userPosts } from "../controller/UserController";
+import { UserProfileHandler } from "../controller/UserController";
 import UserValidation from "../validation/UserValidation";
 import { validateRequest } from "../middleware/validateRequest";
+import { expressWrapper } from "../controller/expressHelper";
+import { GetUserPostsHandler } from "../controller/FeedController";
 
 const router = Router();
 
@@ -10,13 +12,13 @@ router.get(
   "/:username",
   UserValidation.profile(),
   validateRequest,
-  userProfile
+  expressWrapper(UserProfileHandler)
 );
 router.get(
   "/:username/posts",
   UserValidation.posts(),
   validateRequest,
-  userPosts
+  expressWrapper(GetUserPostsHandler)
 );
 
 export default router;

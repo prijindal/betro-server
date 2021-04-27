@@ -1,4 +1,4 @@
-import { UserPostgres } from "../interfaces";
+import { UserPostgres } from "../interfaces/database";
 import postgres from "../db/postgres";
 import { generateServerHash } from "../util/crypto";
 

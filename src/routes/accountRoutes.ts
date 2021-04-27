@@ -4,23 +4,23 @@ import AccountValidation from "../validation/AccountValidation";
 import { validateRequest } from "../middleware/validateRequest";
 import { expressWrapper } from "../controller/expressHelper";
 import {
+  UserProfileResponse,
   GetProfilePictureHandler,
   GetProfileHandler,
   PostProfileHandler,
   PutProfileHandler,
 } from "../controller/ProfileController";
 import {
+  CountResponse,
   GetCountsHandler,
   GetKeysHandler,
+  WhoAmiResponse,
   WhoAmiHandler,
 } from "../controller/AccountController";
 import {
-  WhoAmiResponse,
-  UserProfileResponse,
-  CountResponse,
+  FetchOwnPostsHandler,
   PostsFeedResponse,
-} from "../interfaces";
-import { FetchOwnPostsHandler } from "../controller/FeedController";
+} from "../controller/FeedController";
 
 const router = Router();
 

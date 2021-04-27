@@ -1,5 +1,5 @@
 import postgres from "../db/postgres";
-import { UserNotification, UserSettingsAction } from "../interfaces";
+import { UserNotification, UserSettingsAction } from "../interfaces/database";
 
 export const fetchUserNotifications = async (
   user_id: string

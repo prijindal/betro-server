@@ -18,12 +18,12 @@ import {
 } from "betro-js-lib";
 import { initServer } from "../src/app";
 import postgres from "../src/db/postgres";
-import {
-  GroupResponse,
-  PostResponse,
-  PostsFeedResponse,
-} from "../src/interfaces";
 import { generateImage } from "./utils/generateImage";
+import {
+  PostsFeedResponse,
+  PostResponse,
+} from "../src/controller/FeedController";
+import { GroupResponse } from "../src/controller/GroupController";
 
 interface GeneratedUser {
   credentials: {

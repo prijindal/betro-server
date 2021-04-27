@@ -1,12 +1,13 @@
 import postgres from "../../db/postgres";
 import { getRsaKeys } from "../../service/KeyService";
-import { FollowPostgres, PaginatedResponse } from "../../interfaces";
+import { FollowPostgres } from "../../interfaces/database";
 import { fetchGroups } from "../../service/GroupService";
 import { fetchUsers } from "../../service/UserService";
 import { UserPaginationWrapper } from "../../service/helper";
 import { fetchProfiles } from "../../service/UserProfileService";
 import { AppHandlerFunction } from "../expressHelper";
 import { addProfileInfoToRow } from "./helper";
+import { PaginatedResponse } from "../../interfaces/responses/PaginatedResponse";
 
 export interface FollowerResponse {
   user_id: string;

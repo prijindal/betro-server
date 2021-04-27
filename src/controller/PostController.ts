@@ -1,4 +1,4 @@
-import { PostPostges } from "../interfaces";
+import { PostPostges } from "../interfaces/database";
 import { fetchGroups } from "../service/GroupService";
 import { createPostDatabase } from "../service/PostService";
 import { AppHandlerFunction } from "./expressHelper";

@@ -1,54 +1,54 @@
-import { Request, Response } from "express";
-import { errorResponse } from "../util/responseHandler";
-import { ErrorDataType } from "../constant/ErrorData";
 import {
-  UserSettingResponse,
   UserSettingsAction,
   UserSettingPostgres,
-} from "../interfaces";
+} from "../interfaces/database";
 import { fetchUserSettings } from "../service/SettingsService";
 import postgres from "../db/postgres";
+import { AppHandlerFunction } from "./expressHelper";
 
-export const getUserSettings = async (
-  req: Request,
-  res: Response<Array<UserSettingResponse> | ErrorDataType>
-): Promise<void> => {
-  const user_id = res.locals.user_id;
-  try {
-    const notifications = await fetchUserSettings(user_id);
-    res.status(200).send(notifications);
-  } catch (e) {
-    console.error(e);
-    res.status(503).send(errorResponse(503));
-  }
+export interface UserSettingResponse {
+  id: string;
+  user_id: string;
+  action: UserSettingsAction;
+  enabled: boolean;
+}
+
+export const GetUserSettingsHandler: AppHandlerFunction<
+  { user_id: string },
+  Array<UserSettingResponse>
+> = async (req) => {
+  const user_id = req.user_id;
+  const settings = await fetchUserSettings(user_id);
+  return {
+    response: settings,
+    error: null,
+  };
 };
 
-export const saveUserSetting = async (
-  req: Request<null, null, { action: UserSettingsAction; enabled: boolean }>,
-  res: Response<UserSettingResponse | ErrorDataType>
-): Promise<void> => {
-  const user_id = res.locals.user_id;
-  try {
-    const action = req.body.action;
-    const enabled = req.body.enabled;
+export const SaveUserSettingHandler: AppHandlerFunction<
+  { action: UserSettingsAction; enabled: boolean; user_id: string },
+  UserSettingResponse
+> = async (req) => {
+  const user_id = req.user_id;
+  const action = req.action;
+  const enabled = req.enabled;
 
-    const queryResult = await postgres<UserSettingPostgres>("user_settings")
+  const queryResult = await postgres<UserSettingPostgres>("user_settings")
+    .where({ user_id, action })
+    .select("id");
+  let queryResponse: Array<UserSettingPostgres>;
+  if (queryResult.length == 0) {
+    queryResponse = await postgres<UserSettingPostgres>("user_settings")
+      .insert({ user_id, action, enabled })
+      .returning("*");
+  } else {
+    queryResponse = await postgres<UserSettingPostgres>("user_settings")
       .where({ user_id, action })
-      .select("id");
-    let queryResponse: Array<UserSettingPostgres>;
-    if (queryResult.length == 0) {
-      queryResponse = await postgres<UserSettingPostgres>("user_settings")
-        .insert({ user_id, action, enabled })
-        .returning("*");
-    } else {
-      queryResponse = await postgres<UserSettingPostgres>("user_settings")
-        .where({ user_id, action })
-        .update({ enabled })
-        .returning("*");
-    }
-    res.status(200).send(queryResponse[0]);
-  } catch (e) {
-    console.error(e);
-    res.status(503).send(errorResponse(503));
+      .update({ enabled })
+      .returning("*");
   }
+  return {
+    response: queryResponse[0],
+    error: null,
+  };
 };

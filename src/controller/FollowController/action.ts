@@ -1,5 +1,5 @@
 import postgres from "../../db/postgres";
-import { FollowPostgres, FollowResponse, UserPostgres } from "../../interfaces";
+import { FollowPostgres, UserPostgres } from "../../interfaces/database";
 import { fetchUserGroup } from "../../service/GroupService";
 import { fetchUsers } from "../../service/UserService";
 import { fetchProfile } from "../../service/UserProfileService";
@@ -9,6 +9,11 @@ import { sendUserNotification } from "../NotificationController";
 export interface FollowRequest {
   followee_username: string;
   sym_key: string;
+}
+
+export interface FollowResponse {
+  is_approved: boolean;
+  id: string;
 }
 
 export const FollowUserHandler: AppHandlerFunction<

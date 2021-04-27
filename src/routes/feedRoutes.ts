@@ -1,9 +1,10 @@
 /* /api/feed */
 import { Router } from "express";
-import { getHomeFeed } from "../controller/FeedController";
+import { expressWrapper } from "../controller/expressHelper";
+import { GetHomeFeedHandler } from "../controller/FeedController";
 
 const router = Router();
 
-router.get("/", getHomeFeed);
+router.get("/", expressWrapper(GetHomeFeedHandler));
 
 export default router;

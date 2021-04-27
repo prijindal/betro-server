@@ -1,5 +1,5 @@
 import postgres from "../db/postgres";
-import { FollowPostgres } from "../interfaces";
+import { FollowPostgres } from "../interfaces/database";
 
 export const checkFollow = async (
   user_id: string,

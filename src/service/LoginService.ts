@@ -6,7 +6,7 @@ import { SECRET } from "../config";
 
 import { verifyServerHash, generateServerHash } from "../util/crypto";
 import { isEmpty } from "lodash";
-import { UserPostgres } from "../interfaces";
+import { UserPostgres } from "../interfaces/database";
 
 export type LoginBody = {
   email: string;
