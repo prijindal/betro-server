@@ -4,7 +4,7 @@
 export type ErrorDataType = {
   status: number;
   message: string;
-  data: string;
+  data: string | Array<string> | Record<string, unknown> | null;
 };
 
 const ErrorData: { ERROR_STATUS_ARRAY: Array<ErrorDataType> } = {

@@ -4,29 +4,64 @@ import AccountValidation from "../validation/AccountValidation";
 import {
   whoAmi,
   getKeys,
-  getProfilePicture,
-  getProfile,
-  postProfile,
-  putProfile,
   fetchCounts,
   fetchOwnPosts,
 } from "../controller/LoginController";
 import { validateRequest } from "../middleware/validateRequest";
+import { expressWrapper } from "../controller/expressHelper";
+import {
+  GetProfilePictureHandler,
+  GetProfileHandler,
+  PostProfileHandler,
+  PutProfileHandler,
+} from "../controller/ProfileController";
+import { UserProfileResponse } from "../interfaces/responses/UserProfileResponse";
 
 const router = Router();
 
 router.get("/whoami", whoAmi);
-router.get("/profile_picture", getProfilePicture);
 router.get("/keys", getKeys);
-router.get("/profile", getProfile);
+router.get("/count", fetchCounts);
+
+router.get(
+  "/profile_picture",
+  expressWrapper<{}, string, {}, {}>(GetProfilePictureHandler)
+);
+router.get(
+  "/profile",
+  expressWrapper<{}, UserProfileResponse, {}, {}>(GetProfileHandler)
+);
 router.post(
   "/profile",
   AccountValidation.saveProfile(),
   validateRequest,
-  postProfile
+  expressWrapper<
+    {},
+    UserProfileResponse,
+    {
+      user_id: string;
+      first_name: string;
+      last_name: string;
+      profile_picture: string;
+    },
+    {}
+  >(PostProfileHandler)
 );
-router.put("/profile", putProfile);
-router.get("/count", fetchCounts);
+router.put(
+  "/profile",
+  expressWrapper<
+    {},
+    UserProfileResponse,
+    {
+      user_id: string;
+      first_name?: string;
+      last_name?: string;
+      profile_picture?: string;
+    },
+    {}
+  >(PutProfileHandler)
+);
+
 router.get("/posts", fetchOwnPosts);
 
 export default router;
