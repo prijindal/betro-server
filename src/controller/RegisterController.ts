@@ -75,7 +75,7 @@ export const RegisterUserHandler: AppHandlerFunction<
       return {
         response: {
           device_id: loginDetails.device_id,
-          token: loginDetails.device_id,
+          token: loginDetails.token,
           user_id: response.user_id,
         },
         error: null,
