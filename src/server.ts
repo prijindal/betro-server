@@ -1,4 +1,3 @@
-import errorHandler from "errorhandler";
 import { logger, PORT, ENVIRONMENT } from "./config";
 
 import { initServer } from "./app";
@@ -8,8 +7,6 @@ import { initServer } from "./app";
  */
 
 initServer().then((app) => {
-  app.use(errorHandler());
-
   /**
    * Start Express server.
    */

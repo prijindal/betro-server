@@ -23,9 +23,8 @@ export const authAccesstoken = async (
     }
     res.locals.user_id = user_id;
     userAccessed(access_token_id);
+    next();
   } catch (e) {
     return res.status(401).send(errorResponse(401, "Invalid jwt token"));
-  } finally {
-    next();
   }
 };

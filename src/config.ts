@@ -12,13 +12,14 @@ if (fs.existsSync(".env")) {
   dotenv.config({ path: ".env.example" }); // you can delete this after you create your own .env file!
 }
 
-export const ENVIRONMENT = process.env.NODE_ENV;
+export const ENVIRONMENT = process.env.NODE_ENV || "development";
 
 export const PORT = process.env["PORT"];
 export const POSTGRES_URI = process.env["POSTGRES_URI"];
 export const REDIS_URI = process.env["REDIS_URI"];
 export const SECRET = process.env["SECRET"];
-export const logger = pino();
+export const LOGGER_LEVEL = process.env["LOGGER_LEVEL"] || "info";
+export const logger = pino({ level: LOGGER_LEVEL });
 
 if (!POSTGRES_URI) {
   logger.error(
