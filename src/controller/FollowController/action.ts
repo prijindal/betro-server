@@ -5,6 +5,7 @@ import { fetchUsers } from "../../service/UserService";
 import { fetchProfile } from "../../service/UserProfileService";
 import { AppHandlerFunction } from "../expressHelper";
 import { sendUserNotification } from "../NotificationController";
+import { createUserFeed } from "../../service/FeedService";
 
 export interface FollowRequest {
   followee_username: string;
@@ -134,6 +135,7 @@ export const ApproveUserHandler: AppHandlerFunction<
       const users = await fetchUsers([user_id]);
       if (users.length == 1) {
         const user = users[0];
+        createUserFeed(user.id);
         await sendUserNotification(
           approval.user_id,
           "notification_on_approved",

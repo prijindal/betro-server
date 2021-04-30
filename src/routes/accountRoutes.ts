@@ -17,10 +17,8 @@ import {
   WhoAmiResponse,
   WhoAmiHandler,
 } from "../controller/AccountController";
-import {
-  FetchOwnPostsHandler,
-  PostsFeedResponse,
-} from "../controller/FeedController";
+import { FetchOwnPostsHandler } from "../controller/FeedController";
+import { PostsFeedResponse } from "../service/FeedService";
 
 const router = Router();
 
