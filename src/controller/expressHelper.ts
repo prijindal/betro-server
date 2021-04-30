@@ -44,7 +44,7 @@ export const expressAppHandler = <
       if (error == null) {
         res.status(200).send(response);
       } else {
-        res.status(403).send(error);
+        res.status(error.status).send(error);
       }
     })
     .catch((e) => {
