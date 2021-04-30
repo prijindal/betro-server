@@ -1,6 +1,6 @@
 import { migrate, loadMigrationFiles } from "postgres-migrations";
 import { Pool } from "pg";
-import { POSTGRES_URI } from "../config";
+import { POSTGRES_URI, logger } from "../config";
 
 const pool = new Pool({ connectionString: POSTGRES_URI });
 
@@ -10,7 +10,7 @@ const runMigration = async () => {
     await loadMigrationFiles("migrations");
     await migrate({ client: pool }, "migrations");
   } catch (e) {
-    console.error(e);
+    logger.error(e);
   } finally {
     process.exit();
   }

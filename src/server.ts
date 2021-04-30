@@ -1,4 +1,5 @@
 import errorHandler from "errorhandler";
+import { logger } from "./config";
 
 import { initServer } from "./app";
 
@@ -13,11 +14,11 @@ initServer().then((app) => {
    * Start Express server.
    */
   app.listen(app.get("port"), () => {
-    console.log(
+    logger.info(
       "  App is running at http://localhost:%d in %s mode",
       app.get("port"),
       app.get("env")
     );
-    console.log("  Press CTRL-C to stop\n");
+    logger.info("  Press CTRL-C to stop\n");
   });
 });

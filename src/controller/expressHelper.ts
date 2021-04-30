@@ -1,6 +1,7 @@
 import { ParamsDictionary } from "express-serve-static-core";
 import { Request, Response } from "express";
-import { ErrorDataType } from "src/constant/ErrorData";
+import { logger } from "../config";
+import { ErrorDataType } from "../constant/ErrorData";
 
 export type AppHandlerFunction<ReqParams extends {}, ResBody> = (
   req: ReqParams
@@ -38,11 +39,16 @@ export const expressAppHandler = <
     ...req.body,
     user_id: res.locals.user_id,
   };
-  fn(reqParams).then(({ error, response }) => {
-    if (error == null) {
-      res.status(200).send(response);
-    } else {
-      res.status(403).send(error);
-    }
-  });
+  fn(reqParams)
+    .then(({ error, response }) => {
+      if (error == null) {
+        res.status(200).send(response);
+      } else {
+        res.status(403).send(error);
+      }
+    })
+    .catch((e) => {
+      logger.error(e);
+      res.status(500).send({ status: 500, message: "Some error occurred" });
+    });
 };

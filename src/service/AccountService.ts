@@ -1,5 +1,6 @@
-import postgres from "../db/postgres";
 import { throttle } from "throttle-debounce";
+import { logger } from "../config";
+import postgres from "../db/postgres";
 
 const userAccessedFn = async (access_token_id: string): Promise<void> => {
   try {
@@ -7,7 +8,7 @@ const userAccessedFn = async (access_token_id: string): Promise<void> => {
       .where({ id: access_token_id })
       .update({ accessed_at: postgres.fn.now() });
   } catch (e) {
-    console.error(e);
+    logger.error(e);
   }
 };
 
