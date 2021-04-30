@@ -146,20 +146,27 @@ export const GetHomeFeedHandler: AppHandlerFunction<
     0,
     limit
   );
-  const totalLeft = await redis.zcount(
-    redis_key,
-    `(${after.getTime()}`,
-    "+inf"
-  );
   const posts = await postgres<PostPostges>("posts")
     .whereIn("id", post_ids)
     .orderBy("created_at", "desc");
   // `ZRANGE "4b971f68-6be2-405f-94d9-2e363713d885-feed" -inf (1619775715412 BYSCORE LIMIT 0 20`;
   const response = await postProcessPosts(own_id, posts);
+  let afterCursor = null;
+  if (response.posts.length > 0) {
+    afterCursor = response.posts[response.posts.length - 1].created_at;
+  }
+  let totalLeft = 0;
+  if (afterCursor != null) {
+    totalLeft = await redis.zcount(
+      redis_key,
+      "-inf",
+      `(${afterCursor.getTime()}`
+    );
+  }
   const pageInfo = {
-    after: dateToBase64(after),
+    after: afterCursor != null ? dateToBase64(afterCursor) : null,
     limit,
-    next: total != totalLeft,
+    next: totalLeft > 0,
     total,
   };
   return {
