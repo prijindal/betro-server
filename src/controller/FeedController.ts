@@ -1,9 +1,11 @@
 import postgres from "../db/postgres";
+import redis from "../db/redis";
 import {
   FollowPostgres,
   GroupPostgres,
   PostPostges,
 } from "../interfaces/database";
+import { base64ToDate, limitToInt, dateToBase64 } from "../service/helper";
 import { AppHandlerFunction } from "./expressHelper";
 import { fetchUserPosts } from "../service/PostService";
 import { fetchUserGroups } from "../service/GroupService";
@@ -39,19 +41,25 @@ export interface PostsFeedResponse {
 const postProcessPosts = async (
   own_id: string,
   posts: PostPostges[],
-  follows?: Array<FollowPostgres>
+  loaded_follows?: Array<FollowPostgres>
 ): Promise<PostsFeedResponse> => {
   const posts_users: { [user_id: string]: PostUserResponse } = {};
   const keys: { [key_id: string]: string } = {};
   const group_ids = posts.map((a) => a.group_id);
   const user_ids = posts.map((a) => a.user_id);
-  const users = await fetchUsers(user_ids);
-  const profiles = await fetchProfiles(user_ids);
-  if (follows == null || follows.length == 0) {
-    follows = await postgres<FollowPostgres>("group_follow_approvals")
-      .whereIn("group_id", group_ids)
-      .andWhere({ user_id: own_id });
-  }
+  const fetchFollows = async () => {
+    if (loaded_follows == null || loaded_follows.length == 0) {
+      return await postgres<FollowPostgres>("group_follow_approvals")
+        .whereIn("group_id", group_ids)
+        .andWhere({ user_id: own_id });
+    }
+    return loaded_follows;
+  };
+  const [users, profiles, follows] = await Promise.all([
+    fetchUsers(user_ids),
+    fetchProfiles(user_ids),
+    fetchFollows(),
+  ]);
   posts.forEach((post) => {
     const follow = follows.find((a) => a.group_id == post.group_id);
     if (follow != null) {
@@ -88,23 +96,15 @@ const postProcessPosts = async (
   return feed;
 };
 
-export const GetHomeFeedHandler: AppHandlerFunction<
-  { user_id: string },
-  PostsFeedResponse
-> = async (req) => {
-  const own_id = req.user_id;
-  const posts: Array<{
-    followee_sym_key: string;
-    group_sym_key: string;
-    media_encoding: string;
-    media_content: string;
-    text_content: string;
-    id: string;
-    created_at: Date;
-    key_id: string;
-    user_id: string;
-    group_id: string;
-  }> = await postgres<FollowPostgres>("group_follow_approvals")
+const createUserFeed = async (own_id: string): Promise<void> => {
+  const redis_key = `${own_id}-feed`;
+  const updating_key = `${own_id}-feed-updating`;
+  const updating = (await redis.get(updating_key)) === "1";
+  if (updating) {
+    return;
+  }
+  redis.set(updating_key, "1");
+  const posts = await postgres<FollowPostgres>("group_follow_approvals")
     .innerJoin<GroupPostgres>(
       "group_policies",
       "group_policies.id",
@@ -114,22 +114,59 @@ export const GetHomeFeedHandler: AppHandlerFunction<
     .innerJoin<PostPostges>("posts", "posts.group_id", "=", "group_policies.id")
     .where("group_follow_approvals.user_id", own_id)
     .andWhere("group_follow_approvals.is_approved", true)
-    .select(
-      "followee_sym_key",
-      "group_sym_key",
-      "followee_id",
-      "media_encoding",
-      "media_content",
-      "text_content",
-      "posts.id",
-      "posts.created_at",
-      "posts.key_id",
-      "posts.user_id",
-      "posts.group_id"
+    .select("posts.id", "posts.created_at");
+  posts.forEach((post) => {
+    redis.zaddBuffer(
+      redis_key,
+      post.created_at.getTime(),
+      Buffer.from(post.id, "utf-8")
     );
+  });
+  redis.del(updating_key);
+};
+
+export const GetHomeFeedHandler: AppHandlerFunction<
+  { after: string; limit: string; user_id: string },
+  PostsFeedResponse
+> = async (req) => {
+  const own_id = req.user_id;
+  const after = base64ToDate(req.after) || new Date();
+  const limit = limitToInt(req.limit, 10);
+  const redis_key = `${own_id}-feed`;
+  const exists = await redis.exists(redis_key);
+  if (!exists) {
+    createUserFeed(own_id);
+  }
+  const total = await redis.zcount(redis_key, "-inf", "+inf");
+  const post_ids = await redis.zrevrangebyscore(
+    redis_key,
+    `(${after.getTime()}`,
+    "-inf",
+    "LIMIT",
+    0,
+    limit
+  );
+  const totalLeft = await redis.zcount(
+    redis_key,
+    `(${after.getTime()}`,
+    "+inf"
+  );
+  const posts = await postgres<PostPostges>("posts")
+    .whereIn("id", post_ids)
+    .orderBy("created_at", "desc");
+  // `ZRANGE "4b971f68-6be2-405f-94d9-2e363713d885-feed" -inf (1619775715412 BYSCORE LIMIT 0 20`;
   const response = await postProcessPosts(own_id, posts);
+  const pageInfo = {
+    after: dateToBase64(after),
+    limit,
+    next: total != totalLeft,
+    total,
+  };
   return {
-    response,
+    response: {
+      ...response,
+      pageInfo,
+    },
     error: null,
   };
 };

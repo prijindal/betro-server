@@ -1,6 +1,9 @@
 import { PostPostges } from "../interfaces/database";
 import { fetchGroups } from "../service/GroupService";
-import { createPostDatabase } from "../service/PostService";
+import {
+  createPostDatabase,
+  createPostRedisTrigger,
+} from "../service/PostService";
 import { AppHandlerFunction } from "./expressHelper";
 
 export interface PostCreateRequest {
@@ -39,6 +42,7 @@ export const CreatePostHandler: AppHandlerFunction<
       media_encoding,
       text_content
     );
+    createPostRedisTrigger(post.id);
     return {
       response: post,
       error: null,

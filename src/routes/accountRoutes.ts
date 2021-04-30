@@ -81,7 +81,7 @@ router.put(
 );
 
 router.get(
-  "/whoami",
+  "/posts",
   expressWrapper<{}, PostsFeedResponse, {}, {}>(FetchOwnPostsHandler)
 );
 

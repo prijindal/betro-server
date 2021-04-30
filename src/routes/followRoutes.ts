@@ -1,11 +1,6 @@
 /* /api/follow */
 import { Router } from "express";
 import {
-  GetApprovalsHandler,
-  GetFollowersHandler,
-  GetFolloweesHandler,
-} from "../controller/FollowController";
-import {
   ApproveUserHandler,
   FollowUserHandler,
   FollowRequest,
@@ -15,6 +10,9 @@ import {
 import FollowValidation from "../validation/FollowValidation";
 import { validateRequest } from "../middleware/validateRequest";
 import { expressWrapper } from "../controller/expressHelper";
+import { GetFollowersHandler } from "../controller/FollowController/followers";
+import { GetFolloweesHandler } from "../controller/FollowController/followees";
+import { GetApprovalsHandler } from "../controller/FollowController/approvals";
 
 const router = Router();
 

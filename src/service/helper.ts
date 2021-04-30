@@ -16,7 +16,7 @@ export const tableCount = async <T extends { id: string }>(
   }
 };
 
-const base64ToDate = (b64: string): Date | undefined => {
+export const base64ToDate = (b64: string): Date | undefined => {
   if (!isNil(b64) && !isEmpty(b64)) {
     const date = new Date(Buffer.from(b64, "base64").toString("utf-8"));
     if (date instanceof Date && !isNaN(date.valueOf())) {
@@ -27,19 +27,22 @@ const base64ToDate = (b64: string): Date | undefined => {
   return undefined;
 };
 
-const dateToBase64 = (date: Date): string => {
+export const dateToBase64 = (date: Date): string => {
   return Buffer.from(date.toISOString(), "utf-8").toString("base64");
 };
 
-const limitToInt = (limitStr: string): number => {
+export const limitToInt = (
+  limitStr: string,
+  default_value: number = 50
+): number => {
   let limit: number;
   try {
     limit = parseInt(limitStr, 10);
   } catch (e) {
-    limit = 50;
+    limit = default_value;
   } finally {
     if (isNaN(limit)) {
-      limit = 50;
+      limit = default_value;
     }
   }
   return limit;
