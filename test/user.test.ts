@@ -19,10 +19,7 @@ import {
 import { initServer } from "../src/app";
 import postgres from "../src/db/postgres";
 import { generateImage } from "./utils/generateImage";
-import {
-  PostsFeedResponse,
-  PostResponse,
-} from "../src/controller/FeedController";
+import { PostsFeedResponse, PostResponse } from "../src/service/FeedService";
 import { GroupResponse } from "../src/controller/GroupController";
 
 interface GeneratedUser {
