@@ -2,12 +2,6 @@ import postgres from "../db/postgres";
 import redis from "../db/redis";
 import { FollowPostgres, PostPostges } from "../interfaces/database";
 
-export const fetchUserPosts = async (
-  user_id: string
-): Promise<Array<PostPostges>> => {
-  return await postgres<PostPostges>("posts").where({ user_id }).select("*");
-};
-
 export const createPostDatabase = async (
   user_id: string,
   group_id: string,

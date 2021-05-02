@@ -26,6 +26,14 @@ export interface PostUserResponse {
   sym_key?: string;
 }
 
+export interface FeedPageInfo {
+  updating: boolean;
+  next: boolean;
+  limit: number;
+  total: number;
+  after: string;
+}
+
 export interface PostsFeedResponse {
   posts: Array<PostResponse>;
   users: { [user_id: string]: PostUserResponse };

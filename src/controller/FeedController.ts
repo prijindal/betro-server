@@ -3,22 +3,23 @@ import redis from "../db/redis";
 import { PostPostges } from "../interfaces/database";
 import { base64ToDate, limitToInt, dateToBase64 } from "../service/helper";
 import { AppHandlerFunction } from "./expressHelper";
-import { fetchUserPosts } from "../service/PostService";
 import { fetchUserGroups } from "../service/GroupService";
 import { getSymKeys } from "../service/KeyService";
 import { checkFollow } from "../service/FollowService";
 import { fetchUserByUsername } from "../service/UserService";
+import { UserPaginationWrapper } from "../service/helper";
 import {
   createUserFeed,
   postProcessPosts,
   PostResponse,
   isUpdatingUserFeed,
   PostsFeedResponse,
+  FeedPageInfo,
 } from "../service/FeedService";
 
 export const GetHomeFeedHandler: AppHandlerFunction<
   { after: string; limit: string; user_id: string },
-  PostsFeedResponse
+  PostsFeedResponse & { pageInfo: FeedPageInfo }
 > = async (req) => {
   const own_id = req.user_id;
   const after = base64ToDate(req.after) || new Date();
@@ -57,7 +58,7 @@ export const GetHomeFeedHandler: AppHandlerFunction<
       `(${afterCursor.getTime()}`
     );
   }
-  const pageInfo = {
+  const pageInfo: FeedPageInfo = {
     updating,
     after: afterCursor != null ? dateToBase64(afterCursor) : null,
     limit,
@@ -74,15 +75,26 @@ export const GetHomeFeedHandler: AppHandlerFunction<
 };
 
 export const FetchOwnPostsHandler: AppHandlerFunction<
-  { user_id: string },
-  PostsFeedResponse
+  { user_id: string; after: string; limit: string },
+  PostsFeedResponse & { pageInfo: FeedPageInfo }
 > = async (req) => {
   const own_id = req.user_id;
-  const postsResponse = await fetchUserPosts(own_id);
+  const {
+    data,
+    after,
+    limit,
+    total,
+    next,
+  } = await UserPaginationWrapper<PostPostges>(
+    "posts",
+    { user_id: own_id },
+    req.limit,
+    req.after
+  );
   const groups = await fetchUserGroups(own_id);
   const keys = await getSymKeys(groups.map((a) => a.key_id));
   const posts: Array<PostResponse> = [];
-  for (const post of postsResponse) {
+  for (const post of data) {
     posts.push({
       id: post.id,
       user_id: post.user_id,
@@ -93,20 +105,30 @@ export const FetchOwnPostsHandler: AppHandlerFunction<
       created_at: post.created_at,
     });
   }
+  const pageInfo: FeedPageInfo = {
+    updating: false,
+    after: after,
+    limit,
+    next: next,
+    total,
+  };
   const feed: PostsFeedResponse = {
     posts,
     keys,
     users: {},
   };
   return {
-    response: feed,
+    response: {
+      ...feed,
+      pageInfo: pageInfo,
+    },
     error: null,
   };
 };
 
 export const GetUserPostsHandler: AppHandlerFunction<
-  { username: string; user_id: string },
-  PostsFeedResponse
+  { username: string; user_id: string; after: string; limit: string },
+  PostsFeedResponse & { pageInfo: FeedPageInfo }
 > = async (req) => {
   const own_id = req.user_id;
   const username = req.username;
@@ -123,10 +145,31 @@ export const GetUserPostsHandler: AppHandlerFunction<
   } else {
     const isFollowing = await checkFollow(own_id, user.id);
     if ((isFollowing && isFollowing.is_approved) || own_id == user.id) {
-      const posts = await fetchUserPosts(user.id);
-      const resp = await postProcessPosts(own_id, posts);
+      const {
+        data,
+        after,
+        limit,
+        total,
+        next,
+      } = await UserPaginationWrapper<PostPostges>(
+        "posts",
+        { user_id: user.id },
+        req.limit,
+        req.after
+      );
+      const resp = await postProcessPosts(own_id, data);
+      const pageInfo: FeedPageInfo = {
+        updating: false,
+        after: after,
+        limit,
+        next: next,
+        total,
+      };
       return {
-        response: resp,
+        response: {
+          ...resp,
+          pageInfo,
+        },
         error: null,
       };
     } else {
