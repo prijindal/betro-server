@@ -14,7 +14,7 @@ router.get("/", expressWrapper(GetUserSettingsHandler));
 
 router.post(
   "/",
-  SettingsValidation.saveNotification(),
+  SettingsValidation.saveSettings(),
   validateRequest,
   expressWrapper(SaveUserSettingHandler)
 );

@@ -1,8 +1,5 @@
 import postgres from "../db/postgres";
-import {
-  UserSettingPostgres,
-  UserSettingsAction,
-} from "../interfaces/database";
+import { UserSettingPostgres, UserSettingsType } from "../interfaces/database";
 
 export const fetchUserSettings = async (
   user_id: string
@@ -14,10 +11,10 @@ export const fetchUserSettings = async (
 
 export const checkUserSetting = async (
   user_id: string,
-  action: UserSettingsAction
+  type: UserSettingsType
 ): Promise<boolean> => {
   const queryResult = await postgres<UserSettingPostgres>("user_settings")
-    .where({ user_id, action })
+    .where({ user_id, type })
     .select("enabled");
   if (queryResult.length == 0) {
     return false;

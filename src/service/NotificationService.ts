@@ -1,5 +1,8 @@
 import postgres from "../db/postgres";
-import { UserNotification, UserSettingsAction } from "../interfaces/database";
+import {
+  UserNotification,
+  UserNotificationsActions,
+} from "../interfaces/database";
 
 export const fetchUserNotifications = async (
   user_id: string
@@ -11,7 +14,7 @@ export const fetchUserNotifications = async (
 
 export const createUserNotification = async (
   user_id: string,
-  action: UserSettingsAction,
+  action: UserNotificationsActions,
   content: string,
   payload: Record<string, unknown>
 ): Promise<UserNotification> => {

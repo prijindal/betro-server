@@ -128,25 +128,27 @@ CREATE TABLE posts (
     ON DELETE CASCADE
 );
 
-CREATE TYPE user_settings_action as ENUM ('notification_on_approved', 'notification_on_followed');
+CREATE TYPE user_settings_type as ENUM ('notification_on_approved', 'notification_on_followed', 'allow_search');
 
 CREATE TABLE user_settings (
   id UUID DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL,
-  action user_settings_action NOT NULL,
+  type user_settings_type NOT NULL,
   enabled BOOLEAN NOT NULL,
   CONSTRAINT fk_user
     FOREIGN KEY(user_id) 
     REFERENCES users(id)
     ON DELETE CASCADE,
   PRIMARY KEY (id),
-  UNIQUE (user_id, action)
+  UNIQUE (user_id, type)
 );
+
+CREATE TYPE user_notifications_action as ENUM ('notification_on_approved', 'notification_on_followed');
 
 CREATE TABLE user_notifications (
   id UUID DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL,
-  action user_settings_action NOT NULL,
+  action user_notifications_action NOT NULL,
   read boolean DEFAULT FALSE,
   content VARCHAR NOT NULL,
   payload JSONB NOT NULL,

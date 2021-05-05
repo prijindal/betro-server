@@ -1,8 +1,8 @@
-import { UserSettingsAction } from "./UserSettingsAction";
+import { UserSettingsType } from "./UserSettingsType";
 
 export interface UserSettingPostgres {
   id: string;
   user_id: string;
-  action: UserSettingsAction;
+  type: UserSettingsType;
   enabled: boolean;
 }

@@ -2,7 +2,10 @@ import {
   fetchUserNotifications,
   createUserNotification,
 } from "../service/NotificationService";
-import { UserNotification, UserSettingsAction } from "..///interfaces/database";
+import {
+  UserNotification,
+  UserNotificationsActions,
+} from "../interfaces/database";
 import { checkUserSetting } from "../service/SettingsService";
 import { AppHandlerFunction } from "./expressHelper";
 import postgres from "../db/postgres";
@@ -10,7 +13,7 @@ import postgres from "../db/postgres";
 export interface NotificationResponse {
   id: string;
   user_id: string;
-  action: UserSettingsAction;
+  action: UserNotificationsActions;
   content: string;
   payload: Record<string, unknown>;
   created_at: Date;
@@ -18,7 +21,7 @@ export interface NotificationResponse {
 
 export const sendUserNotification = async (
   user_id: string,
-  action: UserSettingsAction,
+  action: UserNotificationsActions,
   content: string,
   payload: Record<string, unknown>
 ) => {

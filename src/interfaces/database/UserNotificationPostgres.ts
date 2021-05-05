@@ -1,9 +1,9 @@
-import { UserSettingsAction } from "./UserSettingsAction";
+import { UserNotificationsActions } from "./UserNotificationsActions";
 
 export interface UserNotification {
   id: string;
   user_id: string;
-  action: UserSettingsAction;
+  action: UserNotificationsActions;
   content: string;
   payload: Record<string, unknown>;
   read: boolean;
