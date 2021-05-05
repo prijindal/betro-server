@@ -310,19 +310,20 @@ describe("User functions", () => {
     10 * 1000
   );
   it(
-    "Enables notification settings",
+    "Enables settings",
     async () => {
-      const notification_settings = [
+      const user_settings = [
         "notification_on_approved",
         "notification_on_followed",
+        "allow_search",
       ];
       for (const email in tokenMap) {
         if (Object.prototype.hasOwnProperty.call(tokenMap, email)) {
-          for (const notification_setting of notification_settings) {
+          for (const user_setting of user_settings) {
             const token = tokenMap[email];
             const response = await request(app)
               .post("/api/settings")
-              .send({ action: notification_setting, enabled: true })
+              .send({ type: user_setting, enabled: true })
               .set({ ...headers, Authorization: `Bearer ${token}` });
             expect(response.status).toEqual(200);
           }
@@ -332,7 +333,7 @@ describe("User functions", () => {
     10 * 1000
   );
   it(
-    "Checks notification settings",
+    "Checks settings",
     async () => {
       for (const email in tokenMap) {
         if (Object.prototype.hasOwnProperty.call(tokenMap, email)) {
@@ -341,8 +342,8 @@ describe("User functions", () => {
             .get("/api/settings")
             .set({ ...headers, Authorization: `Bearer ${token}` });
           expect(response.status).toEqual(200);
-          expect(response.body.length).toEqual(2);
-          expect(response.body[0].action).toEqual("notification_on_approved");
+          expect(response.body.length).toEqual(3);
+          expect(response.body[0].type).toEqual("notification_on_approved");
           expect(response.body[0].enabled).toEqual(true);
         }
       }
@@ -431,6 +432,17 @@ describe("User functions", () => {
       });
     expect(response.status).toEqual(200);
     expect(response.body.is_approved).toEqual(false);
+  });
+  it("Searches user", async () => {
+    const user1 = users[0];
+    const user2 = users[1];
+    const token2 = tokenMap[user2.credentials.email];
+    const response = await request(app)
+      .get("/api/user/search?query=" + user1.credentials.username)
+      .set({ ...headers, Authorization: `Bearer ${token2}` });
+    expect(response.status).toEqual(200);
+    expect(response.body.length).toEqual(1);
+    expect(response.body[0].id).toEqual(user1.id);
   });
   it("Check notification for follow", async () => {
     const user1 = users[0];
@@ -597,6 +609,17 @@ describe("User functions", () => {
     );
     expect(firstName.toString("utf-8")).toEqual(user2.profile.first_name);
   });
+  it("Fetches Home feed", async () => {
+    const user1 = users[0];
+    const user2 = users[1];
+    const token1 = tokenMap[user1.credentials.email];
+    const response = await request(app)
+      .get("/api/feed")
+      .set({ ...headers, Authorization: `Bearer ${token1}` });
+    expect(response.status).toEqual(200);
+    expect(response.body.posts.length).toEqual(1);
+    expect(response.body.posts[0].user_id).toEqual(user2.id);
+  });
   it("Deletes group", async () => {
     for (const email in tokenMap) {
       if (Object.prototype.hasOwnProperty.call(tokenMap, email)) {
@@ -629,7 +652,7 @@ describe("User functions", () => {
           .set({ ...headers, Authorization: `Bearer ${token}` });
         expect(response.status).toEqual(200);
         expect(response.body.notifications).toEqual(1);
-        expect(response.body.settings).toEqual(2);
+        expect(response.body.settings).toEqual(3);
         expect(response.body.groups).toEqual(0);
         expect(response.body.followers).toEqual(0);
         expect(response.body.followees).toEqual(0);
