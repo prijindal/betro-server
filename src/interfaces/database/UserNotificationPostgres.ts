@@ -6,5 +6,6 @@ export interface UserNotification {
   action: UserSettingsAction;
   content: string;
   payload: Record<string, unknown>;
+  read: boolean;
   created_at: Date;
 }

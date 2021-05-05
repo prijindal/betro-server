@@ -2,7 +2,7 @@ import { AppHandlerFunction } from "./expressHelper";
 import { fetchUsers } from "../service/UserService";
 import { fetchProfile } from "../service/UserProfileService";
 import { getRsaKeys, getSymKeys } from "../service/KeyService";
-import { FollowPostgres } from "../interfaces/database";
+import { FollowPostgres, UserNotification } from "../interfaces/database";
 import { tableCount } from "../service/helper";
 
 export interface WhoAmiResponse {
@@ -108,6 +108,13 @@ export const GetCountsHandler: AppHandlerFunction<
         tableCount<FollowPostgres>("group_follow_approvals", {
           followee_id: user_id,
           is_approved: false,
+        })
+      );
+    } else if (include_field == "notifications") {
+      promises.push(
+        tableCount<UserNotification>("user_notifications", {
+          user_id,
+          read: false,
         })
       );
     } else {

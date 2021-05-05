@@ -147,6 +147,7 @@ CREATE TABLE user_notifications (
   id UUID DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL,
   action user_settings_action NOT NULL,
+  read boolean DEFAULT FALSE,
   content VARCHAR NOT NULL,
   payload JSONB NOT NULL,
   created_at timestamptz DEFAULT NOW(),
