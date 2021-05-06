@@ -1,6 +1,6 @@
 import postgres from "../db/postgres";
 import redis from "../db/redis";
-import { PostPostges } from "../interfaces/database";
+import { PostLikePostgres, PostPostges } from "../interfaces/database";
 import { base64ToDate, limitToInt, dateToBase64 } from "../service/helper";
 import { AppHandlerFunction } from "./expressHelper";
 import { fetchUserGroups } from "../service/GroupService";
@@ -93,16 +93,24 @@ export const FetchOwnPostsHandler: AppHandlerFunction<
   );
   const groups = await fetchUserGroups(own_id);
   const keys = await getSymKeys(groups.map((a) => a.key_id));
+  const post_ids = data.map((a) => a.id);
+  const likes = await postgres<PostLikePostgres>("post_likes")
+    .where({ user_id: own_id })
+    .whereIn("post_id", post_ids)
+    .select("id", "post_id");
   const posts: Array<PostResponse> = [];
   for (const post of data) {
+    const isLiked = likes.find((a) => a.post_id == post.id);
     posts.push({
       id: post.id,
       user_id: post.user_id,
+      likes: post.likes,
       media_content: post.media_content,
       media_encoding: post.media_encoding,
       text_content: post.text_content,
       key_id: post.key_id,
       created_at: post.created_at,
+      is_liked: isLiked != null,
     });
   }
   const pageInfo: FeedPageInfo = {

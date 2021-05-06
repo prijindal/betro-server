@@ -1,4 +1,4 @@
-import { PostPostges } from "../interfaces/database";
+import { PostPostges, PostLikePostgres } from "../interfaces/database";
 import { fetchGroups } from "../service/GroupService";
 import {
   createPostDatabase,
@@ -93,3 +93,98 @@ export const GetPostHandler: AppHandlerFunction<
     };
   }
 };
+
+export interface LikeResponse {
+  liked: boolean;
+  likes?: number;
+}
+
+const TogglePostHandler: (
+  likeState: boolean
+) => AppHandlerFunction<{ id: string; user_id: string }, LikeResponse> = (
+  likeState
+) => {
+  return async (req) => {
+    const user_id = req.user_id;
+    const post = await postgres<PostPostges>("posts")
+      .where({ id: req.id })
+      .select("id")
+      .first();
+    if (post == null) {
+      return {
+        error: { status: 404, message: "Post not found", data: post },
+        response: null,
+      };
+    }
+    const isLiked = await postgres<PostLikePostgres>("post_likes")
+      .where({
+        post_id: req.id,
+        user_id,
+      })
+      .select("id")
+      .first();
+    if (isLiked == null && likeState === true) {
+      const [postLike, post] = await Promise.all([
+        postgres<PostLikePostgres>("post_likes")
+          .insert({ post_id: req.id, user_id })
+          .returning("id"),
+        postgres<PostPostges>("posts")
+          .update("likes", postgres.raw("likes + 1"))
+          .where({ id: req.id })
+          .returning("likes"),
+      ]);
+      if (postLike.length > 0 && post.length > 0) {
+        return {
+          response: { liked: true, likes: post[0] },
+          error: null,
+        };
+      } else {
+        return {
+          response: { liked: false },
+          error: null,
+        };
+      }
+    } else if (isLiked != null && likeState === false) {
+      const [postLike, post] = await Promise.all([
+        postgres<PostLikePostgres>("post_likes")
+          .where({ post_id: req.id, user_id })
+          .delete()
+          .returning("id"),
+        postgres<PostPostges>("posts")
+          .update("likes", postgres.raw("likes - 1"))
+          .where({ id: req.id })
+          .returning("likes"),
+      ]);
+      if (postLike.length > 0 && post.length > 0) {
+        return {
+          response: { liked: false, likes: post[0] },
+          error: null,
+        };
+      } else {
+        return {
+          response: { liked: true },
+          error: null,
+        };
+      }
+    } else {
+      return {
+        error: {
+          status: 404,
+          message: likeState ? "Already liked" : "Not liked",
+          data: isLiked,
+        },
+        response: null,
+      };
+    }
+  };
+};
+
+export const LikePostHandler: AppHandlerFunction<
+  { id: string; user_id: string },
+  LikeResponse
+> = TogglePostHandler(true);
+
+export const UnLikePostHandler: AppHandlerFunction<
+  { id: string; user_id: string },
+  LikeResponse
+> = TogglePostHandler(false);

@@ -112,6 +112,7 @@ CREATE TABLE posts (
     text_content VARCHAR,
     media_content VARCHAR,
     media_encoding VARCHAR,
+    likes INTEGER DEFAULT 0,
     created_at timestamptz DEFAULT NOW(),
     PRIMARY KEY (id),
     CONSTRAINT fk_user
@@ -126,6 +127,20 @@ CREATE TABLE posts (
       FOREIGN KEY(key_id)
 	  REFERENCES user_sym_keys(id)
     ON DELETE CASCADE
+);
+
+CREATE TABLE post_likes (
+    id uuid DEFAULT gen_random_uuid (),
+    user_id uuid NOT NULL,
+    post_id uuid NOT NULL,
+    created_at timestamptz DEFAULT NOW(),
+    PRIMARY KEY (id),
+    CONSTRAINT fk_user
+      FOREIGN KEY(user_id) 
+    REFERENCES users(id),
+    CONSTRAINT fk_post
+      FOREIGN KEY(post_id) 
+    REFERENCES posts(id)
 );
 
 CREATE TYPE user_settings_type as ENUM ('notification_on_approved', 'notification_on_followed', 'allow_search');

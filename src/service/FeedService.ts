@@ -3,6 +3,7 @@ import redis from "../db/redis";
 import {
   FollowPostgres,
   GroupPostgres,
+  PostLikePostgres,
   PostPostges,
 } from "../interfaces/database";
 import { fetchUsers } from "../service/UserService";
@@ -15,6 +16,8 @@ export interface PostResponse {
   media_encoding: string;
   text_content: string;
   key_id: string;
+  likes: number;
+  is_liked: boolean;
   created_at: Date;
 }
 
@@ -62,6 +65,12 @@ export const postProcessPosts = async (
     fetchProfiles(user_ids),
     fetchFollows(),
   ]);
+  const post_ids = posts.map((a) => a.id);
+  const likes = await postgres<PostLikePostgres>("post_likes")
+    .where({ user_id: own_id })
+    .whereIn("post_id", post_ids)
+    .select("id", "post_id");
+  const postResource: Array<PostResponse> = [];
   posts.forEach((post) => {
     const follow = follows.find((a) => a.group_id == post.group_id);
     if (follow != null) {
@@ -81,17 +90,21 @@ export const postProcessPosts = async (
       }
       posts_users[user.id] = userResponse;
     }
-  });
-  const feed: PostsFeedResponse = {
-    posts: posts.map((post) => ({
+    const isLiked = likes.find((a) => a.post_id == post.id);
+    postResource.push({
       id: post.id,
+      likes: post.likes,
       user_id: post.user_id,
       media_content: post.media_content,
       media_encoding: post.media_encoding,
       text_content: post.text_content,
       key_id: post.key_id,
       created_at: post.created_at,
-    })),
+      is_liked: isLiked != null,
+    });
+  });
+  const feed: PostsFeedResponse = {
+    posts: postResource,
     keys,
     users: posts_users,
   };
