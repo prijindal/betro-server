@@ -1,6 +1,9 @@
 /* /api/post */
 import { Router } from "express";
-import { CreatePostHandler } from "../controller/PostController";
+import {
+  CreatePostHandler,
+  GetPostHandler,
+} from "../controller/PostController";
 import PostValidation from "../validation/PostValidation";
 import { validateRequest } from "../middleware/validateRequest";
 import { expressWrapper } from "../controller/expressHelper";
@@ -13,7 +16,12 @@ router.post(
   validateRequest,
   expressWrapper(CreatePostHandler)
 );
-// router.get("/:id", PostValidation.profile(), userProfile);
+router.get(
+  "/:id",
+  PostValidation.post(),
+  validateRequest,
+  expressWrapper(GetPostHandler)
+);
 // router.post("/:id/like", PostValidation.posts(), userPosts);
 
 export default router;

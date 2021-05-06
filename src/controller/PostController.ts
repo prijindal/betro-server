@@ -5,6 +5,12 @@ import {
   createPostRedisTrigger,
 } from "../service/PostService";
 import { AppHandlerFunction } from "./expressHelper";
+import {
+  postProcessPosts,
+  PostResponse,
+  PostUserResponse,
+} from "../service/FeedService";
+import postgres from "../db/postgres";
 
 export interface PostCreateRequest {
   group_id: string;
@@ -46,6 +52,44 @@ export const CreatePostHandler: AppHandlerFunction<
     return {
       response: post,
       error: null,
+    };
+  }
+};
+
+export interface GetPostResponse {
+  post: PostResponse & { key: string };
+  user: PostUserResponse;
+}
+
+export const GetPostHandler: AppHandlerFunction<
+  { id: string; user_id: string },
+  GetPostResponse
+> = async (req) => {
+  const user_id = req.user_id;
+  const post = await postgres<PostPostges>("posts")
+    .where({ id: req.id })
+    .select("*")
+    .first();
+  const { posts, users, keys } = await postProcessPosts(user_id, [post]);
+  if (posts.length > 0) {
+    return {
+      response: {
+        post: {
+          ...posts[0],
+          key: keys[posts[0].key_id],
+        },
+        user: users[posts[0].user_id],
+      },
+      error: null,
+    };
+  } else {
+    return {
+      response: null,
+      error: {
+        status: 404,
+        message: "Post not found",
+        data: null,
+      },
     };
   }
 };
