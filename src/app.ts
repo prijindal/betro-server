@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import compression from "compression";
+import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import ROUTES from "./constant/Routes";
 
@@ -26,6 +27,7 @@ export async function initServer(): Promise<express.Express> {
   app.disable("x-powered-by");
   app.use(helmet());
   app.use(cors());
+  app.use(cookieParser());
   app.use(compression());
   app.use(express.json({ limit: "50mb" }));
 

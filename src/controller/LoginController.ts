@@ -7,17 +7,12 @@ import {
   createAccessToken,
 } from "../service/LoginService";
 import { SECRET } from "../config";
-import { getRsaKeys, getSymKeys } from "../service/KeyService";
 import { AppHandlerFunction } from "./expressHelper";
 
 export const LoginUserHandler: AppHandlerFunction<
   LoginBody & { user_agent: string },
   {
     token: string;
-    device_id: string;
-    public_key: string;
-    private_key: string;
-    sym_key: string;
   }
 > = async ({
   email,
@@ -39,29 +34,12 @@ export const LoginUserHandler: AppHandlerFunction<
       device_display_name,
       user_agent
     );
-    const rsaKeys = await getRsaKeys([verifiedObject.rsa_key_id], true);
-    const symKeys = await getSymKeys([verifiedObject.sym_key_id]);
-    if (rsaKeys.length == 0) {
-      return {
-        error: {
-          status: 404,
-          message: "Your account has some issues. Pleae register again",
-          data: null,
-        },
-        response: null,
-      };
-    } else {
-      return {
-        error: null,
-        response: {
-          token: loggedInData.token,
-          device_id: loggedInData.device_id,
-          public_key: rsaKeys[0].public_key,
-          private_key: rsaKeys[0].private_key,
-          sym_key: symKeys[verifiedObject.sym_key_id],
-        },
-      };
-    }
+    return {
+      error: null,
+      response: {
+        token: loggedInData.token,
+      },
+    };
   }
 };
 

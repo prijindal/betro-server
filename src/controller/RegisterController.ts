@@ -35,8 +35,6 @@ export const IsAvailabeEmailHandler: AppHandlerFunction<
 export const RegisterUserHandler: AppHandlerFunction<
   RegisterBody & { user_agent: string },
   {
-    user_id: string;
-    device_id?: string;
     token?: string;
   }
 > = async ({
@@ -64,7 +62,7 @@ export const RegisterUserHandler: AppHandlerFunction<
       sym_key_id
     );
     if (!inhibit_login) {
-      return { response, error: null };
+      return { response: {}, error: null };
     } else {
       const loginDetails = await loginHelper(
         response.user_id,
@@ -74,9 +72,7 @@ export const RegisterUserHandler: AppHandlerFunction<
       );
       return {
         response: {
-          device_id: loginDetails.device_id,
           token: loginDetails.token,
-          user_id: response.user_id,
         },
         error: null,
       };

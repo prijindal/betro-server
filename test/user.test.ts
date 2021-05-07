@@ -158,7 +158,6 @@ describe("User functions", () => {
           })
         );
       expect(response.status).toEqual(200);
-      expect(response.body.user_id).toBeTruthy();
     }
   });
   it("Login users", async () => {
@@ -168,11 +167,26 @@ describe("User functions", () => {
         .set(headers)
         .send(JSON.stringify(user.credentials));
       expect(response.status).toEqual(200);
-      expect(response.body.device_id).toBeTruthy();
+      expect(response.body.token).toBeTruthy();
       tokenMap[user.credentials.email] = response.body.token;
       user.keys.publicKey = response.body.public_key;
       user.keys.privateKey = response.body.private_key;
       user.keys.profileSymKey = response.body.sym_key;
+    }
+  });
+  it("Fetches keys", async () => {
+    for (const email in tokenMap) {
+      if (Object.prototype.hasOwnProperty.call(tokenMap, email)) {
+        const token = tokenMap[email];
+        const response = await request(app)
+          .get("/api/account/keys")
+          .set({ ...headers, Authorization: `Bearer ${token}` });
+        const userIndex = users.findIndex((a) => a.credentials.email == email);
+        expect(response.status).toEqual(200);
+        users[userIndex].keys.publicKey = response.body.public_key;
+        users[userIndex].keys.privateKey = response.body.private_key;
+        users[userIndex].keys.profileSymKey = response.body.sym_key;
+      }
     }
   });
   it("Saves profile information", async () => {
@@ -270,21 +284,6 @@ describe("User functions", () => {
           response.body.first_name
         );
         expect(firstName.toString("utf-8")).toEqual(user.profile.first_name);
-      }
-    }
-  });
-  it("Verifies keys route", async () => {
-    for (const email in tokenMap) {
-      if (Object.prototype.hasOwnProperty.call(tokenMap, email)) {
-        const token = tokenMap[email];
-        const response = await request(app)
-          .get("/api/account/keys")
-          .set({ ...headers, Authorization: `Bearer ${token}` });
-        const userIndex = users.findIndex((a) => a.credentials.email == email);
-        expect(response.status).toEqual(200);
-        expect(response.body.private_key).toEqual(
-          users[userIndex].keys.privateKey
-        );
       }
     }
   });

@@ -9,7 +9,11 @@ export const authAccesstoken = async (
   res: Response,
   next: NextFunction
 ): Promise<Response> => {
-  const authorization = req.headers.authorization;
+  let authorization = req.headers.authorization;
+  const cookie = req.cookies["token"];
+  if (cookie != null && cookie.length > 0) {
+    authorization = `Bearer ${cookie}`;
+  }
   if (!authorization || !authorization.startsWith("Bearer")) {
     return res
       .status(401)
