@@ -11,6 +11,7 @@ import {
   PostUserResponse,
 } from "../service/FeedService";
 import postgres from "../db/postgres";
+import redis from "../db/redis";
 
 export interface PostCreateRequest {
   group_id: string;
@@ -124,18 +125,15 @@ const TogglePostHandler: (
       .select("id")
       .first();
     if (isLiked == null && likeState === true) {
-      const [postLike, post] = await Promise.all([
+      const [postLike, post_likes] = await Promise.all([
         postgres<PostLikePostgres>("post_likes")
           .insert({ post_id: req.id, user_id })
           .returning("id"),
-        postgres<PostPostges>("posts")
-          .update("likes", postgres.raw("likes + 1"))
-          .where({ id: req.id })
-          .returning("likes"),
+        redis.incr(`${req.id}_likes`),
       ]);
-      if (postLike.length > 0 && post.length > 0) {
+      if (postLike.length > 0) {
         return {
-          response: { liked: true, likes: post[0] },
+          response: { liked: true, likes: post_likes },
           error: null,
         };
       } else {
@@ -145,19 +143,16 @@ const TogglePostHandler: (
         };
       }
     } else if (isLiked != null && likeState === false) {
-      const [postLike, post] = await Promise.all([
+      const [postLike, post_likes] = await Promise.all([
         postgres<PostLikePostgres>("post_likes")
           .where({ post_id: req.id, user_id })
           .delete()
           .returning("id"),
-        postgres<PostPostges>("posts")
-          .update("likes", postgres.raw("likes - 1"))
-          .where({ id: req.id })
-          .returning("likes"),
+        redis.decr(`${req.id}_likes`),
       ]);
-      if (postLike.length > 0 && post.length > 0) {
+      if (postLike.length > 0) {
         return {
-          response: { liked: false, likes: post[0] },
+          response: { liked: false, likes: post_likes },
           error: null,
         };
       } else {

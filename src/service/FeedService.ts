@@ -8,6 +8,7 @@ import {
 } from "../interfaces/database";
 import { fetchUsers } from "../service/UserService";
 import { fetchProfiles } from "../service/UserProfileService";
+import { fetchPostsLikes } from "./LikesService";
 
 export interface PostResponse {
   id: string;
@@ -66,10 +67,11 @@ export const postProcessPosts = async (
     fetchFollows(),
   ]);
   const post_ids = posts.map((a) => a.id);
-  const likes = await postgres<PostLikePostgres>("post_likes")
+  const isLikeds = await postgres<PostLikePostgres>("post_likes")
     .where({ user_id: own_id })
     .whereIn("post_id", post_ids)
     .select("id", "post_id");
+  const posts_likes = await fetchPostsLikes(post_ids);
   const postResource: Array<PostResponse> = [];
   posts.forEach((post) => {
     const follow = follows.find((a) => a.group_id == post.group_id);
@@ -90,11 +92,12 @@ export const postProcessPosts = async (
       }
       posts_users[user.id] = userResponse;
     }
-    const isLiked = likes.find((a) => a.post_id == post.id);
+    const isLiked = isLikeds.find((a) => a.post_id == post.id);
+    const post_likes = posts_likes.find((a) => a.post_id == post.id);
     postResource.push({
       id: post.id,
-      likes: post.likes,
       user_id: post.user_id,
+      likes: post_likes.likes,
       media_content: post.media_content,
       media_encoding: post.media_encoding,
       text_content: post.text_content,

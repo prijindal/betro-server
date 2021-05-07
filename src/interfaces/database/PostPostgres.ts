@@ -6,6 +6,5 @@ export interface PostPostges {
   text_content: string;
   media_content: string;
   media_encoding: string;
-  likes: number;
   created_at: Date;
 }

@@ -16,6 +16,7 @@ import {
   PostsFeedResponse,
   FeedPageInfo,
 } from "../service/FeedService";
+import { fetchPostsLikes } from "../service/LikesService";
 
 export const GetHomeFeedHandler: AppHandlerFunction<
   { after: string; limit: string; user_id: string },
@@ -98,13 +99,15 @@ export const FetchOwnPostsHandler: AppHandlerFunction<
     .where({ user_id: own_id })
     .whereIn("post_id", post_ids)
     .select("id", "post_id");
+  const posts_likes = await fetchPostsLikes(post_ids);
   const posts: Array<PostResponse> = [];
   for (const post of data) {
     const isLiked = likes.find((a) => a.post_id == post.id);
+    const post_likes = posts_likes.find((a) => a.post_id == post.id);
     posts.push({
       id: post.id,
       user_id: post.user_id,
-      likes: post.likes,
+      likes: post_likes.likes,
       media_content: post.media_content,
       media_encoding: post.media_encoding,
       text_content: post.text_content,

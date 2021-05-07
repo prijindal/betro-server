@@ -112,7 +112,6 @@ CREATE TABLE posts (
     text_content VARCHAR,
     media_content VARCHAR,
     media_encoding VARCHAR,
-    likes INTEGER DEFAULT 0,
     created_at timestamptz DEFAULT NOW(),
     PRIMARY KEY (id),
     CONSTRAINT fk_user
