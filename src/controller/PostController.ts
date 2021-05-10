@@ -50,6 +50,7 @@ export const CreatePostHandler: AppHandlerFunction<
       text_content
     );
     createPostRedisTrigger(post.id);
+    redis.set(`${post.id}_likes`, 0);
     return {
       response: post,
       error: null,
