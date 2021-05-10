@@ -80,18 +80,13 @@ export const FetchOwnPostsHandler: AppHandlerFunction<
   PostsFeedResponse & { pageInfo: FeedPageInfo }
 > = async (req) => {
   const own_id = req.user_id;
-  const {
-    data,
-    after,
-    limit,
-    total,
-    next,
-  } = await UserPaginationWrapper<PostPostges>(
-    "posts",
-    { user_id: own_id },
-    req.limit,
-    req.after
-  );
+  const { data, after, limit, total, next } =
+    await UserPaginationWrapper<PostPostges>(
+      "posts",
+      { user_id: own_id },
+      req.limit,
+      req.after
+    );
   const groups = await fetchUserGroups(own_id);
   const keys = await getSymKeys(groups.map((a) => a.key_id));
   const post_ids = data.map((a) => a.id);
@@ -156,18 +151,13 @@ export const GetUserPostsHandler: AppHandlerFunction<
   } else {
     const isFollowing = await checkFollow(own_id, user.id);
     if ((isFollowing && isFollowing.is_approved) || own_id == user.id) {
-      const {
-        data,
-        after,
-        limit,
-        total,
-        next,
-      } = await UserPaginationWrapper<PostPostges>(
-        "posts",
-        { user_id: user.id },
-        req.limit,
-        req.after
-      );
+      const { data, after, limit, total, next } =
+        await UserPaginationWrapper<PostPostges>(
+          "posts",
+          { user_id: user.id },
+          req.limit,
+          req.after
+        );
       const resp = await postProcessPosts(own_id, data);
       const pageInfo: FeedPageInfo = {
         updating: false,

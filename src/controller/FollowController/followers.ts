@@ -30,18 +30,13 @@ export const GetFollowersHandler: AppHandlerFunction<
   PaginatedResponse<FollowerResponse>
 > = async (req) => {
   const user_id = req.user_id;
-  const {
-    data,
-    limit,
-    after,
-    total,
-    next,
-  } = await UserPaginationWrapper<FollowPostgres>(
-    "group_follow_approvals",
-    { followee_id: user_id, is_approved: true },
-    req.limit,
-    req.after
-  );
+  const { data, limit, after, total, next } =
+    await UserPaginationWrapper<FollowPostgres>(
+      "group_follow_approvals",
+      { followee_id: user_id, is_approved: true },
+      req.limit,
+      req.after
+    );
   const group_ids = data.map((a) => a.group_id);
   const follower_ids = data.map((a) => a.user_id);
   const [groups, followers, userProfiles, isFollowings] = await Promise.all([
