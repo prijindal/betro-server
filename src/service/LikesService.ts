@@ -5,6 +5,9 @@ import { PostLikePostgres } from "../interfaces/database";
 export const fetchPostsLikes = async (
   post_ids: Array<string>
 ): Promise<Array<{ post_id: string; likes: number }>> => {
+  if (post_ids.length == 0) {
+    return [];
+  }
   const likesString = await redis.mget(
     post_ids.map((post_id) => `${post_id}_likes`)
   );
