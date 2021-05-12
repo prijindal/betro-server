@@ -11,7 +11,7 @@ export const fetchPostsLikes = async (
   const likesString = await redis.mget(
     post_ids.map((post_id) => `${post_id}_likes`)
   );
-  const likes: Array<number> = post_ids.map((a) => 0);
+  const likes: Array<number> = post_ids.map(() => 0);
   for (let index = 0; index < likesString.length; index++) {
     const likeStr = likesString[index];
     likes[index] = parseInt(likeStr, 10);
