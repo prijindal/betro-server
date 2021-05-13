@@ -13,7 +13,6 @@ import {
 import {
   CountResponse,
   GetCountsHandler,
-  GetKeysHandler,
   WhoAmiResponse,
   WhoAmiHandler,
 } from "../controller/AccountController";
@@ -25,12 +24,6 @@ const router = Router();
 router.get(
   "/whoami",
   expressWrapper<{}, WhoAmiResponse, {}, {}>(WhoAmiHandler)
-);
-router.get(
-  "/keys",
-  expressWrapper<{}, { private_key: string; sym_key: string }, {}, {}>(
-    GetKeysHandler
-  )
 );
 router.get(
   "/count",

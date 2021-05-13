@@ -173,3 +173,57 @@ CREATE TABLE user_notifications (
     ON DELETE CASCADE,
   PRIMARY KEY (id)
 );
+
+CREATE TABLE user_echd_keys (
+  id UUID DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  public_key VARCHAR UNIQUE NOT NULL,
+  private_key VARCHAR NOT NULL,
+  claimed BOOLEAN DEFAULT FALSE,
+  CONSTRAINT fk_user
+    FOREIGN KEY(user_id) 
+    REFERENCES users(id)
+    ON DELETE CASCADE,
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE conversations (
+  id UUID DEFAULT gen_random_uuid(),
+  sender_id uuid NOT NULL,
+  receiver_id uuid NOT NULL,
+  sender_key_id uuid NOT NULL,
+  receiver_key_id uuid NOT NULL,
+  CONSTRAINT fk_sender
+    FOREIGN KEY(sender_id) 
+    REFERENCES users(id)
+    ON DELETE CASCADE,
+  CONSTRAINT fk_receiver
+    FOREIGN KEY(receiver_id) 
+    REFERENCES users(id)
+    ON DELETE CASCADE,
+  CONSTRAINT fk_sender_key
+    FOREIGN KEY(sender_key_id) 
+    REFERENCES user_echd_keys(id)
+    ON DELETE CASCADE,
+  CONSTRAINT fk_receiver_key
+    FOREIGN KEY(receiver_key_id) 
+    REFERENCES user_echd_keys(id)
+    ON DELETE CASCADE,
+  PRIMARY KEY (id)
+);
+
+CREATE TABLE messages (
+  id UUID DEFAULT gen_random_uuid(),
+  conversation_id uuid NOT NULL,
+  sender_id uuid NOT NULL,
+  message string NOT NULL,
+  CONSTRAINT fk_coversation
+    FOREIGN KEY(conversation_id) 
+    REFERENCES conversations(id)
+    ON DELETE CASCADE,
+  CONSTRAINT fk_sender
+    FOREIGN KEY(sender_id) 
+    REFERENCES users(id)
+    ON DELETE CASCADE,
+  PRIMARY KEY (id)
+);

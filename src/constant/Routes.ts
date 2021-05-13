@@ -3,6 +3,7 @@ const ROUTES = {
   LOGIN: "/api/login",
   REGISTER: "/api/register",
   ACCOUNT: "/api/account",
+  KEYS: "/api/keys",
   GROUPS: "/api/groups",
   FOLLOW: "/api/follow",
   USER: "/api/user",

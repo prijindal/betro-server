@@ -171,7 +171,7 @@ describe("User functions", () => {
       if (Object.prototype.hasOwnProperty.call(tokenMap, email)) {
         const token = tokenMap[email];
         const response = await request(app)
-          .get("/api/account/keys")
+          .get("/api/keys/")
           .set({ ...headers, Authorization: `Bearer ${token}` });
         const userIndex = users.findIndex((a) => a.credentials.email == email);
         expect(response.status).toEqual(200);
