@@ -73,7 +73,7 @@
     "@types/uuid": "^8.3.0",
     "@typescript-eslint/eslint-plugin": "^4.23.0",
     "@typescript-eslint/parser": "^4.23.0",
-    "betro-js-lib": "git+https://prijindal@github.com/betro-app/betro-js-lib.git#406b342b6d87e95620a99edb5f76cb282a02599c",
+    "betro-js-lib": "git+https://prijindal@github.com/betro-app/betro-js-lib.git#b4c7170f90e65157789f23634f1c7c82b4451df0",
     "concurrently": "^6.1.0",
     "eslint": "^7.26.0",
     "eslint-config-prettier": "^8.3.0",

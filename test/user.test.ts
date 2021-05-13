@@ -8,8 +8,6 @@ import {
   getMasterHash,
   getEncryptionKey,
   generateSymKey,
-  aesEncrypt,
-  aesDecrypt,
   generateRsaPair,
   rsaEncrypt,
   rsaDecrypt,
@@ -35,7 +33,6 @@ interface GeneratedUser {
   };
   password: string;
   encryption_key: string;
-  encryption_mac: string;
   keys: {
     publicKey?: string;
     privateKey?: string;
@@ -74,9 +71,7 @@ const generateUsers = async (n: number = 2): Promise<Array<GeneratedUser>> => {
     const password = faker.internet.password();
     const masterKey = await getMasterKey(email, password);
     const master_hash = await getMasterHash(masterKey, password);
-    const { encryption_key, encryption_mac } = await getEncryptionKey(
-      masterKey
-    );
+    const encryption_key = await getEncryptionKey(masterKey);
     users.push({
       credentials: {
         username: username,
@@ -90,7 +85,6 @@ const generateUsers = async (n: number = 2): Promise<Array<GeneratedUser>> => {
       },
       password,
       encryption_key,
-      encryption_mac,
       keys: {},
     });
   }
@@ -136,14 +130,12 @@ describe("User functions", () => {
     for await (const user of users) {
       const { publicKey, privateKey } = await generateRsaPair();
       const symKey = await generateSymKey();
-      const encryptedPrivateKey = await aesEncrypt(
+      const encryptedPrivateKey = await symEncrypt(
         user.encryption_key,
-        user.encryption_mac,
         Buffer.from(privateKey, "base64")
       );
-      const encryptedSymKey = await aesEncrypt(
+      const encryptedSymKey = await symEncrypt(
         user.encryption_key,
-        user.encryption_mac,
         Buffer.from(symKey, "base64")
       );
       const response = await request(app)
@@ -195,12 +187,11 @@ describe("User functions", () => {
         const token = tokenMap[email];
         const userIndex = users.findIndex((a) => a.credentials.email == email);
         const user = users[userIndex];
-        const symKey = await aesDecrypt(
+        const symKey = await symDecrypt(
           user.encryption_key,
-          user.encryption_mac,
           user.keys.profileSymKey
         );
-        const sym_key = symKey.data.toString("base64");
+        const sym_key = symKey.toString("base64");
         const first_name = await symEncrypt(
           sym_key,
           Buffer.from(user.profile.first_name)
@@ -237,9 +228,8 @@ describe("User functions", () => {
         expect(response.status).toEqual(200);
         expect(response.body.first_name).toBeTruthy();
         expect(response.body.sym_key).toEqual(user.keys.profileSymKey);
-        const { data: symKey } = await aesDecrypt(
+        const symKey = await symDecrypt(
           user.encryption_key,
-          user.encryption_mac,
           response.body.sym_key
         );
         const firstName = await symDecrypt(
@@ -256,9 +246,8 @@ describe("User functions", () => {
         const token = tokenMap[email];
         const userIndex = users.findIndex((a) => a.credentials.email == email);
         const user = users[userIndex];
-        const { data: profileSymKey } = await aesDecrypt(
+        const profileSymKey = await symDecrypt(
           user.encryption_key,
-          user.encryption_mac,
           user.keys.profileSymKey
         );
         const profile_picture = await symEncrypt(
@@ -274,9 +263,8 @@ describe("User functions", () => {
         expect(response.status).toEqual(200);
         expect(response.body.first_name).toBeTruthy();
         expect(response.body.sym_key).toEqual(user.keys.profileSymKey);
-        const { data: symKey } = await aesDecrypt(
+        const symKey = await symDecrypt(
           user.encryption_key,
-          user.encryption_mac,
           response.body.sym_key
         );
         const firstName = await symDecrypt(
@@ -368,9 +356,8 @@ describe("User functions", () => {
         const symKey = await generateSymKey();
         const userIndex = users.findIndex((a) => a.credentials.email == email);
         expect(users[userIndex]).toBeTruthy();
-        const encryptedSymKey = await aesEncrypt(
+        const encryptedSymKey = await symEncrypt(
           users[userIndex].encryption_key,
-          users[userIndex].encryption_mac,
           Buffer.from(symKey, "base64")
         );
         users[userIndex].keys.groupSymKey = symKey;
@@ -399,17 +386,14 @@ describe("User functions", () => {
         const userIndex = users.findIndex((a) => a.credentials.email == email);
         expect(users[userIndex].keys.groupSymKey).toBeTruthy();
         const encryptedSymKey = response.body[0].sym_key;
-        const symKeyData = await aesDecrypt(
+        const symKeyData = await symDecrypt(
           users[userIndex].encryption_key,
-          users[userIndex].encryption_mac,
           encryptedSymKey
         );
-        expect(symKeyData.isVerified).toEqual(true);
-        if (symKeyData.isVerified) {
-          expect(symKeyData.data.toString("base64")).toEqual(
-            users[userIndex].keys.groupSymKey
-          );
-        }
+        expect(symKeyData).not.toBeNull();
+        expect(symKeyData.toString("base64")).toEqual(
+          users[userIndex].keys.groupSymKey
+        );
         users[userIndex].groups = response.body;
       }
     }
@@ -475,12 +459,11 @@ describe("User functions", () => {
       publicKey,
       Buffer.from(groupSymKey, "base64")
     );
-    const userSymKey = await aesDecrypt(
+    const userSymKey = await symDecrypt(
       user2.encryption_key,
-      user2.encryption_mac,
       user2.keys.profileSymKey
     );
-    const userSymKeyEncrypted = await rsaEncrypt(publicKey, userSymKey.data);
+    const userSymKeyEncrypted = await rsaEncrypt(publicKey, userSymKey);
     const resp = await request(app)
       .post("/api/follow/approve")
       .set({ ...headers, Authorization: `Bearer ${token2}` })
@@ -573,13 +556,12 @@ describe("User functions", () => {
       user2.credentials.username
     );
     const group_sym_key_encrypted = keys[posts[0].key_id];
-    const priv_key = await aesDecrypt(
+    const priv_key = await symDecrypt(
       user1.encryption_key,
-      user1.encryption_mac,
       user1.keys.privateKey
     );
     const groupsymkey = await rsaDecrypt(
-      priv_key.data.toString("base64"),
+      priv_key.toString("base64"),
       group_sym_key_encrypted
     );
     const text_content = await symDecrypt(
@@ -590,17 +572,16 @@ describe("User functions", () => {
     const firstNameEncrypted = userresponse[posts[0].user_id].first_name;
     const user_sym_key_encrypted = userresponse[posts[0].user_id].sym_key;
     const userSymKey = await rsaDecrypt(
-      priv_key.data.toString("base64"),
+      priv_key.toString("base64"),
       user_sym_key_encrypted
     );
-    const profileSymKey = await aesDecrypt(
+    const profileSymKey = await symDecrypt(
       user2.encryption_key,
-      user2.encryption_mac,
       user2.keys.profileSymKey
     );
     // console.log(firstNameEncrypted);
     expect(userSymKey.toString("base64")).toEqual(
-      profileSymKey.data.toString("base64")
+      profileSymKey.toString("base64")
     );
     const firstName = await symDecrypt(
       userSymKey.toString("base64"),
