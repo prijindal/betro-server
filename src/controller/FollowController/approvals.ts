@@ -1,5 +1,9 @@
-import { getRsaKeys } from "../../service/KeyService";
-import { FollowPostgres } from "../../interfaces/database";
+import postgres from "../../db/postgres";
+import {
+  EcdhKeyPostgres,
+  FollowPostgres,
+  ProfileGrantPostgres,
+} from "../../interfaces/database";
 import { fetchUsers } from "../../service/UserService";
 import { UserPaginationWrapper } from "../../service/helper";
 import { fetchProfiles } from "../../service/UserProfileService";
@@ -10,10 +14,12 @@ import { PaginatedResponse } from "../../interfaces/responses/PaginatedResponse"
 export interface ApprovalResponse {
   id: string;
   follower_id: string;
-  public_key: string;
-  sym_key: string;
   username: string;
   created_at: Date;
+  follower_key_id: string;
+  follower_public_key: string;
+  own_key_id?: string | null;
+  follower_encrypted_profile_sym_key?: string | null;
   first_name?: string | null;
   last_name?: string | null;
   profile_picture?: string | null;
@@ -36,26 +42,61 @@ export const GetApprovalsHandler: AppHandlerFunction<
     fetchUsers(user_ids),
     fetchProfiles(user_ids),
   ]);
-  const rsa_key_ids = users.map((a) => a.rsa_key_id);
-  const rsa_keys = await getRsaKeys(rsa_key_ids, false);
+  const followersProfileKeys = await postgres<EcdhKeyPostgres>("user_echd_keys")
+    .whereIn(
+      "id",
+      data.map((a) => a.user_key_id)
+    )
+    .select("user_id", "public_key");
+  const ownProfileGrants = await postgres<ProfileGrantPostgres>(
+    "profile_grants"
+  )
+    .whereIn(
+      "grantee_id",
+      data.map((a) => a.user_id)
+    )
+    .where("user_id", user_id)
+    .select("*");
+  const followerProfileGrants = await postgres<ProfileGrantPostgres>(
+    "profile_grants"
+  )
+    .whereIn(
+      "user_id",
+      data.map((a) => a.user_id)
+    )
+    .where("grantee_id", user_id)
+    .select("*");
   const response: Array<ApprovalResponse> = [];
   data.forEach((approval) => {
     const user = users.find((a) => a.id == approval.user_id);
     if (user != null) {
-      const rsa_key = rsa_keys.find((a) => a.id == user.rsa_key_id);
       const profile = profiles.find((a) => a.user_id == user.id);
-      if (rsa_key != null) {
-        let row: ApprovalResponse = {
-          id: approval.id,
-          username: user.username,
-          follower_id: approval.user_id,
-          public_key: rsa_key.public_key,
-          created_at: approval.created_at,
-          sym_key: approval.user_sym_key,
-        };
-        row = addProfileInfoToRow(row, profile);
-        response.push(row);
+      const followersProfileKey = followersProfileKeys.find(
+        (a) => a.user_id == user.id
+      );
+      let row: ApprovalResponse = {
+        id: approval.id,
+        username: user.username,
+        follower_id: approval.user_id,
+        created_at: approval.created_at,
+        follower_key_id: approval.user_key_id,
+        follower_public_key: followersProfileKey.public_key,
+      };
+      const ownProfileGrant = ownProfileGrants.find(
+        (a) => a.grantee_id == user.id
+      );
+      const followerProfileGrant = followerProfileGrants.find(
+        (a) => a.user_id == user.id
+      );
+      if (ownProfileGrant != null) {
+        row.own_key_id = ownProfileGrant.user_key_id;
       }
+      if (followerProfileGrant != null) {
+        row.follower_encrypted_profile_sym_key =
+          followerProfileGrant.encrypted_sym_key;
+      }
+      row = addProfileInfoToRow(row, profile);
+      response.push(row);
     }
   });
   return {

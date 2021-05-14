@@ -19,7 +19,10 @@ export const POSTGRES_URI = process.env["POSTGRES_URI"];
 export const REDIS_URI = process.env["REDIS_URI"];
 export const SECRET = process.env["SECRET"];
 export const LOGGER_LEVEL = process.env["LOGGER_LEVEL"] || "info";
-export const logger = pino({ level: LOGGER_LEVEL });
+export const logger = pino({
+  level: LOGGER_LEVEL,
+  prettyPrint: ENVIRONMENT == "development",
+});
 
 if (!POSTGRES_URI) {
   logger.error(

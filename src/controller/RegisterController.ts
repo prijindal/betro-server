@@ -1,6 +1,6 @@
 import { AppHandlerFunction } from "./expressHelper";
 import { loginHelper } from "./LoginController";
-import { createRsaKeyPair, createSymKey } from "../service/KeyService";
+import { createSymKey } from "../service/KeyService";
 import {
   createUser,
   isEmailAvailable,
@@ -42,8 +42,6 @@ export const RegisterUserHandler: AppHandlerFunction<
   initial_device_display_name,
   user_agent,
   username,
-  public_key,
-  private_key,
   sym_key,
   email,
   master_hash,
@@ -52,15 +50,8 @@ export const RegisterUserHandler: AppHandlerFunction<
   const emailAvailableResult = await isEmailAvailable(email);
   const usernameAvailableResult = await isUsernameAvailable(username);
   if (emailAvailableResult && usernameAvailableResult) {
-    const rsa_key_id = await createRsaKeyPair(public_key, private_key);
     const sym_key_id = await createSymKey(sym_key);
-    const response = await createUser(
-      username,
-      email,
-      master_hash,
-      rsa_key_id,
-      sym_key_id
-    );
+    const response = await createUser(username, email, master_hash, sym_key_id);
     if (!inhibit_login) {
       return { response: {}, error: null };
     } else {

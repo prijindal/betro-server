@@ -1,17 +1,23 @@
-import { FollowPostgres } from "../../interfaces/database";
+import {
+  EcdhKeyPostgres,
+  FollowPostgres,
+  ProfileGrantPostgres,
+} from "../../interfaces/database";
 import { fetchUsers } from "../../service/UserService";
 import { UserPaginationWrapper } from "../../service/helper";
 import { fetchProfiles } from "../../service/UserProfileService";
 import { AppHandlerFunction } from "../expressHelper";
 import { addProfileInfoToRow } from "./helper";
 import { PaginatedResponse } from "../../interfaces/responses/PaginatedResponse";
+import postgres from "../../db/postgres";
 
 export interface FolloweeResponse {
   user_id: string;
   follow_id: string;
   username: string;
   is_approved: boolean;
-  sym_key: string;
+  public_key?: string | null;
+  encrypted_profile_sym_key?: string | null;
   first_name?: string | null;
   last_name?: string | null;
   profile_picture?: string | null;
@@ -34,6 +40,16 @@ export const GetFolloweesHandler: AppHandlerFunction<
     fetchUsers(followee_ids),
     fetchProfiles(followee_ids),
   ]);
+  const profileGrants = await postgres<ProfileGrantPostgres>("profile_grants")
+    .whereIn("user_id", followee_ids)
+    .where("grantee_id", user_id)
+    .select();
+  const followeeKeys = await postgres<EcdhKeyPostgres>(
+    "user_echd_keys"
+  ).whereIn(
+    "id",
+    profileGrants.map((a) => a.user_key_id)
+  );
   const response: Array<FolloweeResponse> = [];
   data.forEach((follow) => {
     const followee = followees.find((a) => a.id == follow.followee_id);
@@ -44,8 +60,19 @@ export const GetFolloweesHandler: AppHandlerFunction<
         follow_id: follow.id,
         username: followee.username,
         is_approved: follow.is_approved,
-        sym_key: follow.followee_sym_key,
       };
+      const profileGrant = profileGrants.find(
+        (a) => a.user_id == follow.user_id
+      );
+      if (profileGrant != null) {
+        row.encrypted_profile_sym_key = profileGrant.encrypted_sym_key;
+        const followeeKey = followeeKeys.find(
+          (a) => a.id == profileGrant.user_key_id
+        );
+        if (followeeKey != null) {
+          row.public_key = followeeKey.public_key;
+        }
+      }
       row = addProfileInfoToRow(row, profile);
       response.push(row);
     }

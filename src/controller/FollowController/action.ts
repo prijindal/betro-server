@@ -1,15 +1,23 @@
 import postgres from "../../db/postgres";
-import { FollowPostgres, UserPostgres } from "../../interfaces/database";
+import {
+  FollowPostgres,
+  ProfileGrantPostgres,
+  UserPostgres,
+} from "../../interfaces/database";
 import { fetchUserGroup } from "../../service/GroupService";
 import { fetchUsers } from "../../service/UserService";
 import { fetchProfile } from "../../service/UserProfileService";
 import { AppHandlerFunction } from "../expressHelper";
 import { sendUserNotification } from "../NotificationController";
 import { createUserFeed } from "../../service/FeedService";
+import { isEmpty } from "lodash";
+import { createGrant } from "../../service/ProfileGrantService";
 
 export interface FollowRequest {
-  followee_username: string;
-  sym_key: string;
+  followee_id: string;
+  own_key_id: string;
+  followee_key_id?: string | null;
+  encrypted_profile_sym_key?: string | null;
 }
 
 export interface FollowResponse {
@@ -22,10 +30,10 @@ export const FollowUserHandler: AppHandlerFunction<
   FollowResponse
 > = async (req) => {
   const user_id = req.user_id;
-  const followee_username = req.followee_username;
+  const followee_id = req.followee_id;
   const followeeUser = await postgres<UserPostgres>("users")
     .select("*")
-    .where({ username: followee_username })
+    .where({ id: followee_id })
     .first();
   if (followeeUser == null) {
     return {
@@ -55,7 +63,8 @@ export const FollowUserHandler: AppHandlerFunction<
         {
           user_id,
           followee_id: followeeUser.id,
-          user_sym_key: req.sym_key,
+          user_key_id: req.own_key_id,
+          followee_key_id: req.followee_key_id,
         },
         "*"
       );
@@ -68,6 +77,24 @@ export const FollowUserHandler: AppHandlerFunction<
           `${user.username} asked to follow you`,
           { username: user.username }
         );
+      }
+      const followeeProfileGrant = await createGrant({
+        user_id: followeeUser.id,
+        user_key_id: req.followee_key_id,
+        grantee_id: user_id,
+        grantee_key_id: req.own_key_id,
+      });
+      if (
+        !isEmpty(req.encrypted_profile_sym_key) &&
+        !isEmpty(req.followee_key_id)
+      ) {
+        const followerProfileGrant = await createGrant({
+          user_id: user_id,
+          user_key_id: req.own_key_id,
+          grantee_id: followeeUser.id,
+          grantee_key_id: req.followee_key_id,
+          encrypted_sym_key: req.encrypted_profile_sym_key,
+        });
       }
       return {
         response: {
@@ -82,9 +109,10 @@ export const FollowUserHandler: AppHandlerFunction<
 
 export interface ApproveRequest {
   follow_id: string;
-  group_sym_key: string;
-  followee_sym_key?: string;
+  encrypted_group_sym_key: string;
   group_id: string;
+  own_key_id: string;
+  encrypted_profile_sym_key?: string;
 }
 
 export const ApproveUserHandler: AppHandlerFunction<
@@ -93,8 +121,6 @@ export const ApproveUserHandler: AppHandlerFunction<
 > = async (req) => {
   const user_id = req.user_id;
   const follow_id = req.follow_id;
-  const group_sym_key = req.group_sym_key;
-  const followee_sym_key = req.followee_sym_key;
   const group_id = req.group_id;
   const approval = await postgres<FollowPostgres>("group_follow_approvals")
     .where({ followee_id: user_id, id: follow_id })
@@ -129,8 +155,8 @@ export const ApproveUserHandler: AppHandlerFunction<
         .update({
           is_approved: true,
           group_id,
-          group_sym_key,
-          followee_sym_key,
+          encrypted_sym_key: req.encrypted_group_sym_key,
+          followee_key_id: req.own_key_id,
         });
       const users = await fetchUsers([user_id]);
       if (users.length == 1) {
@@ -142,6 +168,16 @@ export const ApproveUserHandler: AppHandlerFunction<
           `${user.username} has approved your follow request`,
           { username: user.username }
         );
+        const profileGrant = await createGrant({
+          user_id: user_id,
+          grantee_id: approval.user_id,
+          user_key_id: req.own_key_id,
+        });
+        await postgres<ProfileGrantPostgres>("profile_grants")
+          .where({ id: profileGrant.id })
+          .update({
+            encrypted_sym_key: req.encrypted_profile_sym_key,
+          });
       }
       return {
         response: {

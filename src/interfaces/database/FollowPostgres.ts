@@ -3,9 +3,9 @@ export interface FollowPostgres {
   is_approved: boolean;
   user_id: string;
   followee_id: string;
-  group_sym_key: string;
-  user_sym_key: string;
-  followee_sym_key: string;
+  encrypted_sym_key: string;
+  user_key_id: string;
+  followee_key_id: string;
   group_id: string;
   created_at: Date;
 }

@@ -9,11 +9,10 @@ import {
   getEncryptionKey,
   generateSymKey,
   generateRsaPair,
-  rsaEncrypt,
-  rsaDecrypt,
   symEncrypt,
   symDecrypt,
   generateExchangePair,
+  deriveExchangeSymKey,
 } from "betro-js-lib";
 import { initServer } from "../src/app";
 import postgres from "../src/db/postgres";
@@ -35,10 +34,11 @@ interface GeneratedUser {
   password: string;
   encryption_key: string;
   keys: {
-    publicKey?: string;
-    privateKey?: string;
+    // publicKey?: string;
+    // privateKey?: string;
     groupSymKey?: string;
     profileSymKey?: string;
+    ecdhKeys?: Array<{ id: string; public_key: string; private_key: string }>;
   };
   groups?: Array<GroupResponse>;
   id?: string;
@@ -162,8 +162,6 @@ describe("User functions", () => {
       expect(response.status).toEqual(200);
       expect(response.body.token).toBeTruthy();
       tokenMap[user.credentials.email] = response.body.token;
-      user.keys.publicKey = response.body.public_key;
-      user.keys.privateKey = response.body.private_key;
       user.keys.profileSymKey = response.body.sym_key;
     }
   });
@@ -179,8 +177,8 @@ describe("User functions", () => {
         expect(response.body.ecdh_max_keys).toEqual(50);
         expect(response.body.ecdh_claimed_keys).toEqual(0);
         expect(response.body.ecdh_unclaimed_keys).toEqual(0);
-        users[userIndex].keys.publicKey = response.body.public_key;
-        users[userIndex].keys.privateKey = response.body.private_key;
+        // users[userIndex].keys.publicKey = response.body.public_key;
+        // users[userIndex].keys.privateKey = response.body.private_key;
         users[userIndex].keys.profileSymKey = response.body.sym_key;
       }
     }
@@ -428,23 +426,38 @@ describe("User functions", () => {
           .set({ ...headers, Authorization: `Bearer ${token}` });
         expect(response.status).toEqual(200);
         expect(response.body.length).toEqual(25);
+        users[userIndex].keys.ecdhKeys = response.body;
       }
     }
   });
   it("Follows user", async () => {
+    // User 1 send follow request to user2
     const user1 = users[0];
     const user2 = users[1];
     const token1 = tokenMap[user1.credentials.email];
-    const encrypted_sym_key = await rsaEncrypt(
-      user2.keys.publicKey,
-      Buffer.from(user1.keys.profileSymKey, "base64")
+    const keyPair = user1.keys.ecdhKeys[0];
+    const privateKeyUser1 = await symDecrypt(
+      user1.encryption_key,
+      keyPair.private_key
     );
+    const publicKeyUser2 = user2.keys.ecdhKeys[0].public_key;
+    const sym_key = await deriveExchangeSymKey(
+      publicKeyUser2,
+      privateKeyUser1.toString("base64")
+    );
+    const profileSymKey = await symDecrypt(
+      user1.encryption_key,
+      user1.keys.profileSymKey
+    );
+    const encrypted_profile_sym_key = await symEncrypt(sym_key, profileSymKey);
     const response = await request(app)
       .post("/api/follow")
       .set({ ...headers, Authorization: `Bearer ${token1}` })
       .send({
-        followee_username: user2.credentials.username,
-        sym_key: encrypted_sym_key,
+        followee_id: user2.id,
+        own_key_id: keyPair.id,
+        followee_key_id: user2.keys.ecdhKeys[0].id,
+        encrypted_profile_sym_key: encrypted_profile_sym_key,
       });
     expect(response.status).toEqual(200);
     expect(response.body.is_approved).toEqual(false);
@@ -486,24 +499,48 @@ describe("User functions", () => {
     expect(response.status).toEqual(200);
     expect(response.body.total).toEqual(1);
     expect(response.body.data[0].follower_id).toEqual(user1.id);
-    const publicKey = response.body.data[0].public_key;
-    const groupSymKey = user2.keys.groupSymKey;
-    const groupSymKeyEncrypted = await rsaEncrypt(
+    const publicKey = response.body.data[0].follower_public_key;
+    const own_key_id = response.body.data[0].own_key_id;
+    const follower_encrypted_profile_sym_key =
+      response.body.data[0].follower_encrypted_profile_sym_key;
+    const first_name = response.body.data[0].first_name;
+    const ownKeyPair = user2.keys.ecdhKeys.find((a) => a.id == own_key_id);
+    expect(ownKeyPair).not.toBeNull();
+    const privateKey = await symDecrypt(
+      user2.encryption_key,
+      ownKeyPair.private_key
+    );
+    const derivedKey = await deriveExchangeSymKey(
       publicKey,
+      privateKey.toString("base64")
+    );
+    const follower_profile_sym_key = await symDecrypt(
+      derivedKey,
+      follower_encrypted_profile_sym_key
+    );
+    const firstName = await symDecrypt(
+      follower_profile_sym_key.toString("base64"),
+      first_name
+    );
+    expect(firstName.toString("utf-8")).toEqual(user1.profile.first_name);
+    const groupSymKey = user2.keys.groupSymKey;
+    const groupSymKeyEncrypted = await symEncrypt(
+      derivedKey,
       Buffer.from(groupSymKey, "base64")
     );
     const userSymKey = await symDecrypt(
       user2.encryption_key,
       user2.keys.profileSymKey
     );
-    const userSymKeyEncrypted = await rsaEncrypt(publicKey, userSymKey);
+    const userSymKeyEncrypted = await symEncrypt(derivedKey, userSymKey);
     const resp = await request(app)
       .post("/api/follow/approve")
       .set({ ...headers, Authorization: `Bearer ${token2}` })
       .send({
         follow_id: response.body.data[0].id,
-        group_sym_key: groupSymKeyEncrypted,
-        followee_sym_key: userSymKeyEncrypted,
+        encrypted_group_sym_key: groupSymKeyEncrypted,
+        own_key_id: own_key_id,
+        encrypted_profile_sym_key: userSymKeyEncrypted,
         group_id: user2.groups[0].id,
       });
     expect(resp.status).toEqual(200);
@@ -585,29 +622,27 @@ describe("User functions", () => {
     const posts: Array<PostResponse> = body.posts;
     const keys = body.keys;
     const userresponse = body.users;
-    expect(userresponse[posts[0].user_id].username).toEqual(
-      user2.credentials.username
-    );
+    const user = userresponse[posts[0].user_id];
+    expect(user.username).toEqual(user2.credentials.username);
     const group_sym_key_encrypted = keys[posts[0].key_id];
-    const priv_key = await symDecrypt(
+    const privateKey = await symDecrypt(
       user1.encryption_key,
-      user1.keys.privateKey
+      user.own_encrypted_private_key
     );
-    const groupsymkey = await rsaDecrypt(
-      priv_key.toString("base64"),
-      group_sym_key_encrypted
+    const derivedKey = await deriveExchangeSymKey(
+      user.public_key,
+      privateKey.toString("base64")
     );
+    const groupsymkey = await symDecrypt(derivedKey, group_sym_key_encrypted);
     const text_content = await symDecrypt(
       groupsymkey.toString("base64"),
       posts[0].text_content
     );
     expect(text_content.toString("utf-8")).toEqual("My First Post");
     const firstNameEncrypted = userresponse[posts[0].user_id].first_name;
-    const user_sym_key_encrypted = userresponse[posts[0].user_id].sym_key;
-    const userSymKey = await rsaDecrypt(
-      priv_key.toString("base64"),
-      user_sym_key_encrypted
-    );
+    const user_sym_key_encrypted =
+      userresponse[posts[0].user_id].encrypted_profile_sym_key;
+    const userSymKey = await symDecrypt(derivedKey, user_sym_key_encrypted);
     const profileSymKey = await symDecrypt(
       user2.encryption_key,
       user2.keys.profileSymKey
@@ -676,7 +711,7 @@ describe("User functions", () => {
   });
   afterAll(async () => {
     for await (const user of users) {
-      await deleteUser(user);
+      // await deleteUser(user);
     }
   });
 });

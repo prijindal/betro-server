@@ -1,14 +1,12 @@
 import postgres from "../db/postgres";
 import { AppHandlerFunction } from "./expressHelper";
 import { fetchUsers } from "../service/UserService";
-import { getRsaKeys, getSymKeys } from "../service/KeyService";
+import { getSymKeys } from "../service/KeyService";
 import { EcdhKeyPostgres } from "../interfaces/database";
 
 const ECDH_MAX_KEYS = 50;
 
 export interface GetKeysResponse {
-  public_key: string;
-  private_key: string;
   sym_key: string;
   ecdh_max_keys: number;
   ecdh_claimed_keys?: number;
@@ -31,13 +29,8 @@ export const GetKeysHandler: AppHandlerFunction<
       response: null,
     };
   } else {
-    const [rsakeys, sym_keys] = await Promise.all([
-      getRsaKeys([users[0].rsa_key_id], true),
-      getSymKeys([users[0].sym_key_id]),
-    ]);
+    const [sym_keys] = await Promise.all([getSymKeys([users[0].sym_key_id])]);
     const response: GetKeysResponse = {
-      public_key: rsakeys[0].public_key,
-      private_key: rsakeys[0].private_key,
       sym_key: sym_keys[users[0].sym_key_id],
       ecdh_max_keys: ECDH_MAX_KEYS,
     };

@@ -1,7 +1,6 @@
 import { AppHandlerFunction } from "./expressHelper";
 import { fetchUsers } from "../service/UserService";
 import { fetchProfile } from "../service/UserProfileService";
-import { getRsaKeys } from "../service/KeyService";
 import { FollowPostgres, UserNotification } from "../interfaces/database";
 import { tableCount } from "../service/helper";
 
@@ -20,32 +19,20 @@ export const WhoAmiHandler: AppHandlerFunction<
   const user_id = req.user_id;
   const users = await fetchUsers([user_id]);
   if (users.length == 1) {
-    const keys = await getRsaKeys([users[0].rsa_key_id], true);
-    if (keys.length == 1) {
-      const response: WhoAmiResponse = {
-        user_id,
-        email: users[0].email,
-        username: users[0].username,
-      };
-      const profile = await fetchProfile(user_id, false);
-      if (profile != null) {
-        response.first_name = profile.first_name;
-        response.last_name = profile.last_name;
-      }
-      return {
-        response,
-        error: null,
-      };
-    } else {
-      return {
-        response: null,
-        error: {
-          status: 503,
-          message: "Some error occurred",
-          data: null,
-        },
-      };
+    const response: WhoAmiResponse = {
+      user_id,
+      email: users[0].email,
+      username: users[0].username,
+    };
+    const profile = await fetchProfile(user_id, false);
+    if (profile != null) {
+      response.first_name = profile.first_name;
+      response.last_name = profile.last_name;
     }
+    return {
+      response,
+      error: null,
+    };
   } else {
     return {
       response: null,

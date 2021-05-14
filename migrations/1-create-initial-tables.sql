@@ -1,12 +1,5 @@
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
-CREATE TABLE user_rsa_keys (
-    id uuid DEFAULT gen_random_uuid (),
-    public_key VARCHAR UNIQUE NOT NULL,
-    private_key VARCHAR NOT NULL,
-    PRIMARY KEY (id)
-);
-
 CREATE TABLE user_sym_keys (
     id uuid DEFAULT gen_random_uuid (),
     sym_key VARCHAR NOT NULL,
@@ -18,15 +11,10 @@ CREATE TABLE users (
     email VARCHAR NOT NULL,
     username VARCHAR NOT NULL,
     master_hash VARCHAR UNIQUE NOT NULL,
-    rsa_key_id uuid NOT NULL,
     sym_key_id uuid NOT NULL,
     PRIMARY KEY (id),
     UNIQUE(email),
     UNIQUE(username),
-    CONSTRAINT fk_rsa_key
-      FOREIGN KEY(rsa_key_id) 
-	  REFERENCES user_rsa_keys(id)
-    ON DELETE CASCADE,
     CONSTRAINT fk_sym_key
       FOREIGN KEY(sym_key_id) 
 	  REFERENCES user_sym_keys(id)
@@ -61,6 +49,53 @@ CREATE TABLE user_profile (
   ON DELETE CASCADE
 );
 
+CREATE TABLE user_echd_keys (
+  id UUID DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  public_key VARCHAR NOT NULL,
+  private_key VARCHAR NOT NULL,
+  claimed BOOLEAN DEFAULT FALSE,
+  created_at timestamptz DEFAULT NOW(),
+  CONSTRAINT fk_user
+    FOREIGN KEY(user_id) 
+    REFERENCES users(id)
+    ON DELETE CASCADE,
+  PRIMARY KEY (id)
+);
+
+
+CREATE TABLE profile_grants (
+  id uuid DEFAULT gen_random_uuid (),
+  user_id uuid NOT NULL, /* User whose profile we are referring */
+  grantee_id uuid NOT NULL, /* User to which this grant is being made */
+  user_key_id uuid,
+  grantee_key_id uuid,
+  user_profile_id uuid,
+  encrypted_sym_key VARCHAR,
+  granted BOOLEAN DEFAULT FALSE,
+  PRIMARY KEY (id),
+  CONSTRAINT fk_user
+    FOREIGN KEY(user_id) 
+  REFERENCES users(id)
+  ON DELETE CASCADE,
+  CONSTRAINT fk_grantee
+    FOREIGN KEY(grantee_id) 
+  REFERENCES users(id)
+  ON DELETE CASCADE,
+  CONSTRAINT fk_user_key
+    FOREIGN KEY(user_key_id) 
+  REFERENCES user_echd_keys(id)
+  ON DELETE CASCADE,
+  CONSTRAINT fk_grantee_key
+    FOREIGN KEY(grantee_key_id) 
+  REFERENCES user_echd_keys(id)
+  ON DELETE CASCADE,
+  CONSTRAINT fk_user_profile
+    FOREIGN KEY(user_profile_id) 
+  REFERENCES user_profile(id)
+  ON DELETE CASCADE
+);
+
 CREATE TABLE group_policies (
     id uuid DEFAULT gen_random_uuid (),
     user_id uuid NOT NULL,
@@ -82,9 +117,9 @@ CREATE TABLE group_follow_approvals (
     id uuid DEFAULT gen_random_uuid (),
     user_id uuid NOT NULL,
     followee_id uuid NOT NULL,/* This means user_id follows followee_id */
-    user_sym_key VARCHAR NOT NULL,
-    group_sym_key VARCHAR,
-    followee_sym_key VARCHAR,
+    encrypted_sym_key VARCHAR,
+    user_key_id uuid,
+    followee_key_id uuid,
     group_id uuid,
     is_approved BOOLEAN DEFAULT FALSE,
     created_at timestamptz DEFAULT NOW(),
@@ -96,6 +131,14 @@ CREATE TABLE group_follow_approvals (
     CONSTRAINT fk_followee
       FOREIGN KEY(followee_id) 
 	  REFERENCES users(id)
+    ON DELETE CASCADE,
+    CONSTRAINT fk_user_key
+      FOREIGN KEY(user_key_id) 
+    REFERENCES user_echd_keys(id)
+    ON DELETE CASCADE,
+    CONSTRAINT fk_followee_key
+      FOREIGN KEY(followee_key_id) 
+    REFERENCES user_echd_keys(id)
     ON DELETE CASCADE,
     CONSTRAINT fk_group
       FOREIGN KEY(group_id)
@@ -167,19 +210,6 @@ CREATE TABLE user_notifications (
   content VARCHAR NOT NULL,
   payload JSONB NOT NULL,
   created_at timestamptz DEFAULT NOW(),
-  CONSTRAINT fk_user
-    FOREIGN KEY(user_id) 
-    REFERENCES users(id)
-    ON DELETE CASCADE,
-  PRIMARY KEY (id)
-);
-
-CREATE TABLE user_echd_keys (
-  id UUID DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL,
-  public_key VARCHAR NOT NULL,
-  private_key VARCHAR NOT NULL,
-  claimed BOOLEAN DEFAULT FALSE,
   CONSTRAINT fk_user
     FOREIGN KEY(user_id) 
     REFERENCES users(id)

@@ -15,7 +15,7 @@ router.get(
   "/",
   expressWrapper<
     {},
-    { private_key: string; sym_key: string },
+    { sym_key: string },
     {},
     { include_echd_counts?: boolean }
   >(GetKeysHandler)

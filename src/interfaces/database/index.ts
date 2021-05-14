@@ -1,7 +1,6 @@
 export * from "./FollowPostgres";
 export * from "./GroupPostgres";
 export * from "./PostPostgres";
-export * from "./RsaKeyPostgres";
 export * from "./SymKeyPostgres";
 export * from "./UserNotificationPostgres";
 export * from "./UserPostgres";
@@ -13,3 +12,4 @@ export * from "./PostLikePostgres";
 export * from "./EcdhKeyPostgres";
 export * from "./ConversationPostgres";
 export * from "./MessagePostgres";
+export * from "./ProfileGrantPostgres";
