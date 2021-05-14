@@ -216,7 +216,7 @@ CREATE TABLE messages (
   id UUID DEFAULT gen_random_uuid(),
   conversation_id uuid NOT NULL,
   sender_id uuid NOT NULL,
-  message string NOT NULL,
+  message VARCHAR NOT NULL,
   CONSTRAINT fk_coversation
     FOREIGN KEY(conversation_id) 
     REFERENCES conversations(id)

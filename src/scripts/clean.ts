@@ -5,6 +5,9 @@ const cleanAllTables = async () => {
 
   try {
     await trx.raw("BEGIN");
+    await trx.raw("DROP TABLE IF EXISTS messages;");
+    await trx.raw("DROP TABLE IF EXISTS conversations;");
+    await trx.raw("DROP TABLE IF EXISTS user_echd_keys;");
     await trx.raw("DROP TABLE IF EXISTS user_settings;");
     await trx.raw("DROP TABLE IF EXISTS user_notifications;");
     await trx.raw("DROP TYPE IF EXISTS user_settings_type");
