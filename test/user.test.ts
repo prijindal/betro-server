@@ -1,6 +1,6 @@
 import "betro-js-lib/dist/setupNodePollyfill";
 import { Express } from "express";
-import { includes } from "lodash";
+import { includes, times, constant } from "lodash";
 import faker from "faker";
 import request from "supertest";
 import {
@@ -13,6 +13,7 @@ import {
   rsaDecrypt,
   symEncrypt,
   symDecrypt,
+  generateExchangePair,
 } from "betro-js-lib";
 import { initServer } from "../src/app";
 import postgres from "../src/db/postgres";
@@ -171,10 +172,13 @@ describe("User functions", () => {
       if (Object.prototype.hasOwnProperty.call(tokenMap, email)) {
         const token = tokenMap[email];
         const response = await request(app)
-          .get("/api/keys/")
+          .get("/api/keys/?include_echd_counts=true")
           .set({ ...headers, Authorization: `Bearer ${token}` });
         const userIndex = users.findIndex((a) => a.credentials.email == email);
         expect(response.status).toEqual(200);
+        expect(response.body.ecdh_max_keys).toEqual(50);
+        expect(response.body.ecdh_claimed_keys).toEqual(0);
+        expect(response.body.ecdh_unclaimed_keys).toEqual(0);
         users[userIndex].keys.publicKey = response.body.public_key;
         users[userIndex].keys.privateKey = response.body.private_key;
         users[userIndex].keys.profileSymKey = response.body.sym_key;
@@ -395,6 +399,35 @@ describe("User functions", () => {
           users[userIndex].keys.groupSymKey
         );
         users[userIndex].groups = response.body;
+      }
+    }
+  });
+  it("Upload Ecdh Keys", async () => {
+    for (const email in tokenMap) {
+      if (Object.prototype.hasOwnProperty.call(tokenMap, email)) {
+        const token = tokenMap[email];
+        const keyPairs = await Promise.all(
+          times(25).map(() => generateExchangePair())
+        );
+        const userIndex = users.findIndex((a) => a.credentials.email == email);
+        const encryptedKeyPairs = await Promise.all(
+          keyPairs.map(async ({ publicKey, privateKey }) => {
+            const privKey = await symEncrypt(
+              users[userIndex].encryption_key,
+              Buffer.from(privateKey, "base64")
+            );
+            return {
+              public_key: publicKey,
+              private_key: privKey,
+            };
+          })
+        );
+        const response = await request(app)
+          .post("/api/keys/ecdh/upload")
+          .send({ keys: encryptedKeyPairs })
+          .set({ ...headers, Authorization: `Bearer ${token}` });
+        expect(response.status).toEqual(200);
+        expect(response.body.length).toEqual(25);
       }
     }
   });

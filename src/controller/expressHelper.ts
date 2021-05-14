@@ -1,4 +1,3 @@
-import { ParamsDictionary } from "express-serve-static-core";
 import { Request, Response } from "express";
 import { logger, ENVIRONMENT } from "../config";
 import { ErrorDataType } from "../constant/ErrorData";
@@ -8,7 +7,7 @@ export type AppHandlerFunction<ReqParams extends {}, ResBody> = (
 ) => Promise<{ response: ResBody | null; error: ErrorDataType | null }>;
 
 export const expressWrapper = <
-  P extends {} = ParamsDictionary,
+  P extends {} = {},
   ResBody extends {} = {},
   ReqBody extends {} = {},
   ReqQuery extends {} = {}
@@ -24,7 +23,7 @@ export const expressWrapper = <
 };
 
 export const expressAppHandler = <
-  P extends {} = ParamsDictionary,
+  P extends {} = {},
   ResBody extends {} = {},
   ReqBody extends {} = {},
   ReqQuery extends {} = {}
@@ -40,13 +39,13 @@ export const expressAppHandler = <
     user_id: res.locals.user_id,
   };
   const loggableRequest = {
-    path: req.path,
-    params: req.params,
-    query: req.query,
-    body: req.body,
-    ip: req.ip,
-    headers: req.headers,
-    locals: res.locals,
+    // path: req.path,
+    // params: req.params,
+    // query: req.query,
+    // body: req.body,
+    // ip: req.ip,
+    // headers: req.headers,
+    // locals: res.locals,
   };
   fn(reqParams)
     .then(({ error, response }) => {

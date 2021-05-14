@@ -10,3 +10,4 @@ export * from "./UserSettingPostgres";
 export * from "./UserSettingsType";
 export * from "./UserNotificationsActions";
 export * from "./PostLikePostgres";
+export * from "./EcdhKeyPostgres";

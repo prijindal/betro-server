@@ -177,7 +177,7 @@ CREATE TABLE user_notifications (
 CREATE TABLE user_echd_keys (
   id UUID DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL,
-  public_key VARCHAR UNIQUE NOT NULL,
+  public_key VARCHAR NOT NULL,
   private_key VARCHAR NOT NULL,
   claimed BOOLEAN DEFAULT FALSE,
   CONSTRAINT fk_user
