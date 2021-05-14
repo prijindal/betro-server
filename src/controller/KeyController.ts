@@ -68,6 +68,18 @@ export const GetKeysHandler: AppHandlerFunction<
   }
 };
 
+export const GetEcdhUserKeyHandler: AppHandlerFunction<
+  { user_id: string; id: string },
+  { id: string; public_key: string }
+> = async (req) => {
+  const user_id = req.id;
+  const ecdhKey = await postgres<EcdhKeyPostgres>("user_echd_keys")
+    .where({ user_id, claimed: false })
+    .first()
+    .select("id", "public_key");
+  return { response: ecdhKey, error: null };
+};
+
 export const GetEcdhKeysHandler: AppHandlerFunction<
   { user_id: string; include_types: string },
   Array<EcdhKeyPostgres>

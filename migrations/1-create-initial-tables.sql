@@ -217,6 +217,7 @@ CREATE TABLE messages (
   conversation_id uuid NOT NULL,
   sender_id uuid NOT NULL,
   message VARCHAR NOT NULL,
+  created_at timestamptz DEFAULT NOW(),
   CONSTRAINT fk_coversation
     FOREIGN KEY(conversation_id) 
     REFERENCES conversations(id)

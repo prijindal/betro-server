@@ -4,6 +4,7 @@ import { expressWrapper } from "../controller/expressHelper";
 import {
   GetKeysHandler,
   GetEcdhKeysHandler,
+  GetEcdhUserKeyHandler,
   CreateEcdhKeyHandler,
   CreateEcdhKeysHandler,
 } from "../controller/KeyController";
@@ -21,6 +22,7 @@ router.get(
 );
 
 router.get("/ecdh", expressWrapper(GetEcdhKeysHandler));
+router.get("/ecdh/user/:id", expressWrapper(GetEcdhUserKeyHandler));
 router.post("/ecdh", expressWrapper(CreateEcdhKeyHandler));
 router.post("/ecdh/upload", expressWrapper(CreateEcdhKeysHandler));
 

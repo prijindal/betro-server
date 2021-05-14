@@ -11,3 +11,5 @@ export * from "./UserSettingsType";
 export * from "./UserNotificationsActions";
 export * from "./PostLikePostgres";
 export * from "./EcdhKeyPostgres";
+export * from "./ConversationPostgres";
+export * from "./MessagePostgres";

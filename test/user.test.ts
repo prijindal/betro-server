@@ -1,6 +1,6 @@
 import "betro-js-lib/dist/setupNodePollyfill";
 import { Express } from "express";
-import { includes, times, constant } from "lodash";
+import { includes, times } from "lodash";
 import faker from "faker";
 import request from "supertest";
 import {
