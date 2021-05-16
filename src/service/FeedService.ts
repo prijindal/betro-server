@@ -30,6 +30,7 @@ export interface PostUserResponse {
   profile_picture?: string;
   public_key?: string | null;
   own_key_id?: string | null;
+  own_private_key?: string | null;
   encrypted_profile_sym_key?: string | null;
 }
 
@@ -94,6 +95,7 @@ export const postProcessPosts = async (
       const ownGrant = ownGrants.find((a) => a.grantee_id == post.user_id);
       if (ownGrant != null) {
         userResponse.own_key_id = ownGrant.user_key_id;
+        userResponse.own_private_key = ownGrant.user_key.private_key;
       }
       if (profile != null) {
         userResponse.first_name = profile.first_name;

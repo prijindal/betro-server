@@ -11,7 +11,7 @@ import { AppHandlerFunction } from "../expressHelper";
 import { sendUserNotification } from "../NotificationController";
 import { createUserFeed } from "../../service/FeedService";
 import { isEmpty } from "lodash";
-import { createGrant } from "../../service/ProfileGrantService";
+import { claimEcdhKeys, createGrant } from "../../service/ProfileGrantService";
 
 export interface FollowRequest {
   followee_id: string;
@@ -78,17 +78,18 @@ export const FollowUserHandler: AppHandlerFunction<
           { username: user.username }
         );
       }
-      const followeeProfileGrant = await createGrant({
+      await createGrant({
         user_id: followeeUser.id,
         user_key_id: req.followee_key_id,
         grantee_id: user_id,
         grantee_key_id: req.own_key_id,
       });
+      claimEcdhKeys([req.followee_key_id, req.own_key_id]);
       if (
         !isEmpty(req.encrypted_profile_sym_key) &&
         !isEmpty(req.followee_key_id)
       ) {
-        const followerProfileGrant = await createGrant({
+        await createGrant({
           user_id: user_id,
           user_key_id: req.own_key_id,
           grantee_id: followeeUser.id,
@@ -168,17 +169,18 @@ export const ApproveUserHandler: AppHandlerFunction<
           `${user.username} has approved your follow request`,
           { username: user.username }
         );
-        const profileGrant = await createGrant({
-          user_id: user_id,
-          grantee_id: approval.user_id,
-          user_key_id: req.own_key_id,
-        });
-        await postgres<ProfileGrantPostgres>("profile_grants")
-          .where({ id: profileGrant.id })
-          .update({
-            encrypted_sym_key: req.encrypted_profile_sym_key,
-          });
       }
+      const profileGrant = await createGrant({
+        user_id: user_id,
+        grantee_id: approval.user_id,
+        user_key_id: req.own_key_id,
+      });
+      claimEcdhKeys([req.own_key_id, profileGrant.grantee_key_id]);
+      await postgres<ProfileGrantPostgres>("profile_grants")
+        .where({ id: profileGrant.id })
+        .update({
+          encrypted_sym_key: req.encrypted_profile_sym_key,
+        });
       return {
         response: {
           approved: approved === 1,

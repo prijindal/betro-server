@@ -19,6 +19,7 @@ export interface FollowerResponse {
   is_following: boolean;
   is_following_approved: boolean;
   own_key_id?: string | null;
+  own_private_key?: string | null;
   public_key?: string | null;
   encrypted_profile_sym_key?: string | null;
   first_name?: string | null;
@@ -77,6 +78,7 @@ export const GetFollowersHandler: AppHandlerFunction<
       const ownGrant = ownGrants.find((a) => a.grantee_id == follow.user_id);
       if (ownGrant != null) {
         row.own_key_id = ownGrant.user_key_id;
+        row.own_private_key = ownGrant.user_key.private_key;
       }
       row = addProfileInfoToRow(row, profile);
       response.push(row);

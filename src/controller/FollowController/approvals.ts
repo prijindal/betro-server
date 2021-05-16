@@ -15,6 +15,7 @@ export interface ApprovalResponse {
   follower_key_id: string;
   follower_public_key: string;
   own_key_id?: string | null;
+  own_private_key?: string | null;
   follower_encrypted_profile_sym_key?: string | null;
   first_name?: string | null;
   last_name?: string | null;
@@ -56,6 +57,7 @@ export const GetApprovalsHandler: AppHandlerFunction<
       const ownGrant = ownGrants.find((a) => a.user_id == approval.followee_id);
       if (ownGrant != null) {
         row.own_key_id = ownGrant.user_key_id;
+        row.own_private_key = ownGrant.user_key.private_key;
       }
       if (userGrant != null) {
         row.follower_encrypted_profile_sym_key = userGrant.encrypted_sym_key;

@@ -77,3 +77,11 @@ export const fetchProfileGrants = async (
     userGrants: userGrants,
   };
 };
+
+export const claimEcdhKeys = async (ids: Array<string>): Promise<void> => {
+  const key_ids = ids.filter((a) => a != null);
+  await postgres<EcdhKeyPostgres>("user_echd_keys")
+    .whereIn("id", key_ids)
+    .where({ claimed: false })
+    .update({ claimed: true });
+};

@@ -15,6 +15,7 @@ export interface FolloweeResponse {
   public_key?: string | null;
   encrypted_profile_sym_key?: string | null;
   own_key_id?: string | null;
+  own_private_key?: string | null;
   first_name?: string | null;
   last_name?: string | null;
   profile_picture?: string | null;
@@ -60,6 +61,7 @@ export const GetFolloweesHandler: AppHandlerFunction<
       const ownGrant = ownGrants.find((a) => a.user_id == follow.user_id);
       if (ownGrant != null) {
         row.own_key_id = ownGrant.user_key_id;
+        row.own_private_key = ownGrant.user_key.private_key;
       }
       row = addProfileInfoToRow(row, profile);
       response.push(row);
