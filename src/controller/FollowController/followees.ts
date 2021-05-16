@@ -1,15 +1,11 @@
-import {
-  EcdhKeyPostgres,
-  FollowPostgres,
-  ProfileGrantPostgres,
-} from "../../interfaces/database";
+import { FollowPostgres } from "../../interfaces/database";
 import { fetchUsers } from "../../service/UserService";
 import { UserPaginationWrapper } from "../../service/helper";
 import { fetchProfiles } from "../../service/UserProfileService";
 import { AppHandlerFunction } from "../expressHelper";
 import { addProfileInfoToRow } from "./helper";
 import { PaginatedResponse } from "../../interfaces/responses/PaginatedResponse";
-import postgres from "../../db/postgres";
+import { fetchProfileGrants } from "../../service/ProfileGrantService";
 
 export interface FolloweeResponse {
   user_id: string;
@@ -18,6 +14,7 @@ export interface FolloweeResponse {
   is_approved: boolean;
   public_key?: string | null;
   encrypted_profile_sym_key?: string | null;
+  own_key_id?: string | null;
   first_name?: string | null;
   last_name?: string | null;
   profile_picture?: string | null;
@@ -40,15 +37,9 @@ export const GetFolloweesHandler: AppHandlerFunction<
     fetchUsers(followee_ids),
     fetchProfiles(followee_ids),
   ]);
-  const profileGrants = await postgres<ProfileGrantPostgres>("profile_grants")
-    .whereIn("user_id", followee_ids)
-    .where("grantee_id", user_id)
-    .select();
-  const followeeKeys = await postgres<EcdhKeyPostgres>(
-    "user_echd_keys"
-  ).whereIn(
-    "id",
-    profileGrants.map((a) => a.user_key_id)
+  const { userGrants, ownGrants } = await fetchProfileGrants(
+    user_id,
+    followee_ids
   );
   const response: Array<FolloweeResponse> = [];
   data.forEach((follow) => {
@@ -61,17 +52,14 @@ export const GetFolloweesHandler: AppHandlerFunction<
         username: followee.username,
         is_approved: follow.is_approved,
       };
-      const profileGrant = profileGrants.find(
-        (a) => a.user_id == follow.user_id
-      );
-      if (profileGrant != null) {
-        row.encrypted_profile_sym_key = profileGrant.encrypted_sym_key;
-        const followeeKey = followeeKeys.find(
-          (a) => a.id == profileGrant.user_key_id
-        );
-        if (followeeKey != null) {
-          row.public_key = followeeKey.public_key;
-        }
+      const userGrant = userGrants.find((a) => a.user_id == follow.followee_id);
+      if (userGrant != null) {
+        row.encrypted_profile_sym_key = userGrant.encrypted_sym_key;
+        row.public_key = userGrant.user_key.public_key;
+      }
+      const ownGrant = ownGrants.find((a) => a.user_id == follow.user_id);
+      if (ownGrant != null) {
+        row.own_key_id = ownGrant.user_key_id;
       }
       row = addProfileInfoToRow(row, profile);
       response.push(row);

@@ -1,4 +1,4 @@
-import { ProfileGrantPostgres } from "src/interfaces/database";
+import { ProfileGrantPostgres, EcdhKeyPostgres } from "../interfaces/database";
 import postgres from "../db/postgres";
 
 export const createGrant = async (grant: {
@@ -34,4 +34,46 @@ export const createGrant = async (grant: {
     })
     .returning("*");
   return profileGrant[0];
+};
+
+export const fetchProfileGrants = async (
+  user_id: string,
+  user_ids: Array<string>
+) => {
+  const [profileGrants, ownProfileGrants] = await Promise.all([
+    postgres<ProfileGrantPostgres>("profile_grants")
+      .whereIn("user_id", user_ids)
+      .where("grantee_id", user_id)
+      .select(),
+    postgres<ProfileGrantPostgres>("profile_grants")
+      .whereIn("grantee_id", user_ids)
+      .where("user_id", user_id)
+      .select(),
+  ]);
+  const [followerKeys, ownKeys] = await Promise.all([
+    postgres<EcdhKeyPostgres>("user_echd_keys").whereIn(
+      "id",
+      profileGrants.map((a) => a.user_key_id)
+    ),
+    postgres<EcdhKeyPostgres>("user_echd_keys").whereIn(
+      "id",
+      ownProfileGrants.map((a) => a.user_key_id)
+    ),
+  ]);
+  const userGrants = [];
+  for (const profileGrant of profileGrants) {
+    const followerKey = followerKeys.find(
+      (a) => a.id === profileGrant.user_key_id
+    );
+    userGrants.push({ ...profileGrant, user_key: followerKey });
+  }
+  const ownGrants = [];
+  for (const ownProfileGrant of ownProfileGrants) {
+    const ownKey = ownKeys.find((a) => a.id === ownProfileGrant.user_key_id);
+    ownGrants.push({ ...ownProfileGrant, user_key: ownKey });
+  }
+  return {
+    ownGrants: ownGrants,
+    userGrants: userGrants,
+  };
 };

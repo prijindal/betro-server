@@ -9,6 +9,7 @@ import postgres from "../db/postgres";
 import { fetchProfile, fetchProfiles } from "../service/UserProfileService";
 import { AppHandlerFunction } from "./expressHelper";
 import { addProfileInfoToRow } from "./FollowController/helper";
+import { fetchProfileGrants } from "../service/ProfileGrantService";
 
 export interface UserInfoResponse {
   id: string;
@@ -106,27 +107,16 @@ export const SearchUserHandler: AppHandlerFunction<
       .whereIn("followee_id", user_ids)
       .andWhere({ user_id: user_id }),
   ]);
-
-  const followeeProfileGrants = await postgres<ProfileGrantPostgres>(
-    "profile_grants"
-  )
-    .where({ grantee_id: user_id, granted: true })
-    .whereIn("user_id", user_ids)
-    .select("encrypted_sym_key", "id", "user_id");
+  const { userGrants } = await fetchProfileGrants(user_id, user_ids);
   const response: Array<SearchResult> = [];
   users.forEach((user) => {
     const isFollowing = isFollowings.find((a) => a.followee_id == user.id);
-    const followeeProfileGrant = followeeProfileGrants.find(
-      (a) => a.user_id == user.id
-    );
+    const userGrant = userGrants.find((a) => a.user_id == user.id);
     const profile = userProfiles.find((a) => a.user_id == user.id);
     let row: SearchResult = {
       id: user.id,
       username: user.username,
-      sym_key:
-        followeeProfileGrant != null
-          ? followeeProfileGrant.encrypted_sym_key
-          : null,
+      sym_key: userGrant != null ? userGrant.encrypted_sym_key : null,
       is_following: isFollowing != null,
       is_following_approved: isFollowing != null && isFollowing.is_approved,
     };

@@ -1,15 +1,11 @@
-import postgres from "../../db/postgres";
-import {
-  EcdhKeyPostgres,
-  FollowPostgres,
-  ProfileGrantPostgres,
-} from "../../interfaces/database";
+import { FollowPostgres } from "../../interfaces/database";
 import { fetchUsers } from "../../service/UserService";
 import { UserPaginationWrapper } from "../../service/helper";
 import { fetchProfiles } from "../../service/UserProfileService";
 import { AppHandlerFunction } from "../expressHelper";
 import { addProfileInfoToRow } from "./helper";
 import { PaginatedResponse } from "../../interfaces/responses/PaginatedResponse";
+import { fetchProfileGrants } from "../../service/ProfileGrantService";
 
 export interface ApprovalResponse {
   id: string;
@@ -42,58 +38,27 @@ export const GetApprovalsHandler: AppHandlerFunction<
     fetchUsers(user_ids),
     fetchProfiles(user_ids),
   ]);
-  const followersProfileKeys = await postgres<EcdhKeyPostgres>("user_echd_keys")
-    .whereIn(
-      "id",
-      data.map((a) => a.user_key_id)
-    )
-    .select("user_id", "public_key");
-  const ownProfileGrants = await postgres<ProfileGrantPostgres>(
-    "profile_grants"
-  )
-    .whereIn(
-      "grantee_id",
-      data.map((a) => a.user_id)
-    )
-    .where("user_id", user_id)
-    .select("*");
-  const followerProfileGrants = await postgres<ProfileGrantPostgres>(
-    "profile_grants"
-  )
-    .whereIn(
-      "user_id",
-      data.map((a) => a.user_id)
-    )
-    .where("grantee_id", user_id)
-    .select("*");
+  const { ownGrants, userGrants } = await fetchProfileGrants(user_id, user_ids);
   const response: Array<ApprovalResponse> = [];
   data.forEach((approval) => {
     const user = users.find((a) => a.id == approval.user_id);
     if (user != null) {
       const profile = profiles.find((a) => a.user_id == user.id);
-      const followersProfileKey = followersProfileKeys.find(
-        (a) => a.user_id == user.id
-      );
+      const userGrant = userGrants.find((a) => a.user_id == user.id);
       let row: ApprovalResponse = {
         id: approval.id,
         username: user.username,
         follower_id: approval.user_id,
         created_at: approval.created_at,
-        follower_key_id: approval.user_key_id,
-        follower_public_key: followersProfileKey.public_key,
+        follower_key_id: userGrant.user_key_id,
+        follower_public_key: userGrant.user_key.public_key,
       };
-      const ownProfileGrant = ownProfileGrants.find(
-        (a) => a.grantee_id == user.id
-      );
-      const followerProfileGrant = followerProfileGrants.find(
-        (a) => a.user_id == user.id
-      );
-      if (ownProfileGrant != null) {
-        row.own_key_id = ownProfileGrant.user_key_id;
+      const ownGrant = ownGrants.find((a) => a.user_id == approval.followee_id);
+      if (ownGrant != null) {
+        row.own_key_id = ownGrant.user_key_id;
       }
-      if (followerProfileGrant != null) {
-        row.follower_encrypted_profile_sym_key =
-          followerProfileGrant.encrypted_sym_key;
+      if (userGrant != null) {
+        row.follower_encrypted_profile_sym_key = userGrant.encrypted_sym_key;
       }
       row = addProfileInfoToRow(row, profile);
       response.push(row);

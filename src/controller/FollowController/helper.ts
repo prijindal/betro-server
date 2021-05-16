@@ -1,4 +1,4 @@
-import { UserProfilePostgres } from "src/interfaces/database";
+import { UserProfilePostgres } from "../../interfaces/database";
 
 export const addProfileInfoToRow = <
   T extends {

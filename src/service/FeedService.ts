@@ -1,16 +1,15 @@
 import postgres from "../db/postgres";
 import redis from "../db/redis";
 import {
-  EcdhKeyPostgres,
   FollowPostgres,
   GroupPostgres,
   PostLikePostgres,
   PostPostges,
-  ProfileGrantPostgres,
 } from "../interfaces/database";
 import { fetchUsers } from "../service/UserService";
 import { fetchProfiles } from "../service/UserProfileService";
 import { fetchPostsLikes } from "./LikesService";
+import { fetchProfileGrants } from "./ProfileGrantService";
 
 export interface PostResponse {
   id: string;
@@ -77,26 +76,7 @@ export const postProcessPosts = async (
     .select("id", "post_id");
   const posts_likes = await fetchPostsLikes(post_ids);
   const postResource: Array<PostResponse> = [];
-  const profileGrants = await postgres<ProfileGrantPostgres>("profile_grants")
-    .whereIn("user_id", user_ids)
-    .where("grantee_id", own_id)
-    .select();
-  const followerKeys = await postgres<EcdhKeyPostgres>(
-    "user_echd_keys"
-  ).whereIn(
-    "id",
-    profileGrants.map((a) => a.user_key_id)
-  );
-  const ownProfileGrants = await postgres<ProfileGrantPostgres>(
-    "profile_grants"
-  )
-    .whereIn("grantee_id", user_ids)
-    .where("user_id", own_id)
-    .select();
-  const ownKeys = await postgres<EcdhKeyPostgres>("user_echd_keys").whereIn(
-    "id",
-    ownProfileGrants.map((a) => a.user_key_id)
-  );
+  const { ownGrants, userGrants } = await fetchProfileGrants(own_id, user_ids);
   posts.forEach((post) => {
     const follow = follows.find((a) => a.group_id == post.group_id);
     if (follow != null) {
@@ -106,24 +86,14 @@ export const postProcessPosts = async (
     const profile = profiles.find((a) => a.user_id == post.user_id);
     if (user != null) {
       const userResponse: PostUserResponse = { username: user.username };
-      const profileGrant = profileGrants.find((a) => a.user_id == post.user_id);
-      if (profileGrant != null) {
-        userResponse.encrypted_profile_sym_key = profileGrant.encrypted_sym_key;
-        const followerKey = followerKeys.find(
-          (a) => a.id == profileGrant.user_key_id
-        );
-        if (followerKey != null) {
-          userResponse.public_key = followerKey.public_key;
-        }
+      const userGrant = userGrants.find((a) => a.user_id == post.user_id);
+      if (userGrant != null) {
+        userResponse.encrypted_profile_sym_key = userGrant.encrypted_sym_key;
+        userResponse.public_key = userGrant.user_key.public_key;
       }
-      const ownProfileGrant = ownProfileGrants.find(
-        (a) => a.grantee_id == post.user_id
-      );
-      if (ownProfileGrant != null) {
-        const ownKey = ownKeys.find((a) => a.id == ownProfileGrant.user_key_id);
-        if (ownKey != null) {
-          userResponse.own_key_id = ownKey.id;
-        }
+      const ownGrant = ownGrants.find((a) => a.grantee_id == post.user_id);
+      if (ownGrant != null) {
+        userResponse.own_key_id = ownGrant.user_key_id;
       }
       if (profile != null) {
         userResponse.first_name = profile.first_name;

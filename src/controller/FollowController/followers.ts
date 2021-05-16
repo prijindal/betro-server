@@ -1,9 +1,5 @@
 import postgres from "../../db/postgres";
-import {
-  EcdhKeyPostgres,
-  FollowPostgres,
-  ProfileGrantPostgres,
-} from "../../interfaces/database";
+import { FollowPostgres } from "../../interfaces/database";
 import { fetchGroups } from "../../service/GroupService";
 import { fetchUsers } from "../../service/UserService";
 import { UserPaginationWrapper } from "../../service/helper";
@@ -11,6 +7,7 @@ import { fetchProfiles } from "../../service/UserProfileService";
 import { AppHandlerFunction } from "../expressHelper";
 import { addProfileInfoToRow } from "./helper";
 import { PaginatedResponse } from "../../interfaces/responses/PaginatedResponse";
+import { fetchProfileGrants } from "../../service/ProfileGrantService";
 
 export interface FollowerResponse {
   user_id: string;
@@ -53,26 +50,7 @@ export const GetFollowersHandler: AppHandlerFunction<
   ]);
   const response: Array<FollowerResponse> = [];
   const user_ids = data.map((a) => a.user_id);
-  const profileGrants = await postgres<ProfileGrantPostgres>("profile_grants")
-    .whereIn("user_id", user_ids)
-    .where("grantee_id", user_id)
-    .select();
-  const followerKeys = await postgres<EcdhKeyPostgres>(
-    "user_echd_keys"
-  ).whereIn(
-    "id",
-    profileGrants.map((a) => a.user_key_id)
-  );
-  const ownProfileGrants = await postgres<ProfileGrantPostgres>(
-    "profile_grants"
-  )
-    .whereIn("grantee_id", user_ids)
-    .where("user_id", user_id)
-    .select();
-  const ownKeys = await postgres<EcdhKeyPostgres>("user_echd_keys").whereIn(
-    "id",
-    ownProfileGrants.map((a) => a.user_key_id)
-  );
+  const { ownGrants, userGrants } = await fetchProfileGrants(user_id, user_ids);
   data.forEach((follow) => {
     const group = groups.find((a) => a.id == follow.group_id);
     const follower = followers.find((a) => a.id == follow.user_id);
@@ -91,26 +69,14 @@ export const GetFollowersHandler: AppHandlerFunction<
         is_following: isFollowing != null,
         is_following_approved: isFollowing != null && isFollowing.is_approved,
       };
-      const profileGrant = profileGrants.find(
-        (a) => a.user_id == follow.user_id
-      );
-      if (profileGrant != null) {
-        row.encrypted_profile_sym_key = profileGrant.encrypted_sym_key;
-        const followerKey = followerKeys.find(
-          (a) => a.id == profileGrant.user_key_id
-        );
-        if (followerKey != null) {
-          row.public_key = followerKey.public_key;
-        }
+      const userGrant = userGrants.find((a) => a.user_id == follow.user_id);
+      if (userGrant != null) {
+        row.encrypted_profile_sym_key = userGrant.encrypted_sym_key;
+        row.public_key = userGrant.user_key.public_key;
       }
-      const ownProfileGrant = ownProfileGrants.find(
-        (a) => a.grantee_id == follow.user_id
-      );
-      if (ownProfileGrant != null) {
-        const ownKey = ownKeys.find((a) => a.id == ownProfileGrant.user_key_id);
-        if (ownKey != null) {
-          row.own_key_id = ownKey.id;
-        }
+      const ownGrant = ownGrants.find((a) => a.grantee_id == follow.user_id);
+      if (ownGrant != null) {
+        row.own_key_id = ownGrant.user_key_id;
       }
       row = addProfileInfoToRow(row, profile);
       response.push(row);

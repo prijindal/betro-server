@@ -6,7 +6,7 @@ import {
   MessagePostgres,
 } from "../interfaces/database";
 import { PaginatedResponse } from "../interfaces/responses/PaginatedResponse";
-import { UserPaginationWrapper } from "src/service/helper";
+import { UserPaginationWrapper } from "../service/helper";
 
 export const GetConversationHandler: AppHandlerFunction<
   {
