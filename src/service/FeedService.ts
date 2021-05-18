@@ -1,3 +1,4 @@
+import { PostUserResponse } from "../interfaces/responses/UserResponses";
 import postgres from "../db/postgres";
 import redis from "../db/redis";
 import {
@@ -7,9 +8,11 @@ import {
   PostPostges,
 } from "../interfaces/database";
 import { fetchUsers } from "../service/UserService";
-import { fetchProfiles } from "../service/UserProfileService";
 import { fetchPostsLikes } from "./LikesService";
-import { fetchProfileGrants } from "./ProfileGrantService";
+import {
+  addProfileGrantToRow,
+  fetchProfilesWithGrants,
+} from "./ProfileGrantService";
 
 export interface PostResponse {
   id: string;
@@ -22,18 +25,6 @@ export interface PostResponse {
   is_liked: boolean;
   created_at: Date;
 }
-
-export interface PostUserResponse {
-  username: string;
-  first_name?: string;
-  last_name?: string;
-  profile_picture?: string;
-  public_key?: string | null;
-  own_key_id?: string | null;
-  own_private_key?: string | null;
-  encrypted_profile_sym_key?: string | null;
-}
-
 export interface FeedPageInfo {
   updating: boolean;
   next: boolean;
@@ -65,46 +56,33 @@ export const postProcessPosts = async (
     }
     return loaded_follows;
   };
-  const [users, profiles, follows] = await Promise.all([
-    fetchUsers(user_ids),
-    fetchProfiles(user_ids),
-    fetchFollows(),
-  ]);
   const post_ids = posts.map((a) => a.id);
-  const isLikeds = await postgres<PostLikePostgres>("post_likes")
-    .where({ user_id: own_id })
-    .whereIn("post_id", post_ids)
-    .select("id", "post_id");
-  const posts_likes = await fetchPostsLikes(post_ids);
+  const [users, userProfileWithGrants, follows, isLikeds, posts_likes] =
+    await Promise.all([
+      fetchUsers(user_ids),
+      fetchProfilesWithGrants(own_id, user_ids),
+      fetchFollows(),
+      postgres<PostLikePostgres>("post_likes")
+        .where({ user_id: own_id })
+        .whereIn("post_id", post_ids)
+        .select("id", "post_id"),
+      fetchPostsLikes(post_ids),
+    ]);
   const postResource: Array<PostResponse> = [];
-  const { ownGrants, userGrants } = await fetchProfileGrants(own_id, user_ids);
   posts.forEach((post) => {
     const follow = follows.find((a) => a.group_id == post.group_id);
     if (follow != null) {
       keys[post.key_id] = follow.encrypted_sym_key;
     }
     const user = users.find((a) => a.id == post.user_id);
-    const profile = profiles.find((a) => a.user_id == post.user_id);
     if (user != null) {
-      const userResponse: PostUserResponse = { username: user.username };
-      const userGrant = userGrants.find((a) => a.user_id == post.user_id);
-      if (userGrant != null) {
-        userResponse.encrypted_profile_sym_key = userGrant.encrypted_sym_key;
-        userResponse.public_key = userGrant.user_key.public_key;
-      }
-      const ownGrant = ownGrants.find((a) => a.grantee_id == post.user_id);
-      if (ownGrant != null) {
-        userResponse.own_key_id = ownGrant.user_key_id;
-        userResponse.own_private_key = ownGrant.user_key.private_key;
-      }
-      if (profile != null) {
-        userResponse.first_name = profile.first_name;
-        userResponse.last_name = profile.last_name;
-        userResponse.profile_picture = profile.profile_picture;
-        if (follow != null) {
-          // userResponse.sym_key = follow.followee_sym_key;
-        }
-      }
+      const userProfileGrant = userProfileWithGrants.find(
+        (a) => a.user_id == post.user_id
+      );
+      const userResponse: PostUserResponse = {
+        username: user.username,
+        ...addProfileGrantToRow(userProfileGrant),
+      };
       posts_users[user.id] = userResponse;
     }
     const isLiked = isLikeds.find((a) => a.post_id == post.id);

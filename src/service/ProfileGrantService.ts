@@ -1,5 +1,10 @@
-import { ProfileGrantPostgres, EcdhKeyPostgres } from "../interfaces/database";
+import {
+  ProfileGrantPostgres,
+  EcdhKeyPostgres,
+  UserProfilePostgres,
+} from "../interfaces/database";
 import postgres from "../db/postgres";
+import { ProfileGrantRow } from "../interfaces/responses/UserResponses";
 
 export const createGrant = async (grant: {
   user_id: string;
@@ -36,46 +41,73 @@ export const createGrant = async (grant: {
   return profileGrant[0];
 };
 
-export const fetchProfileGrants = async (
-  user_id: string,
+export interface GrantWithProfile extends ProfileGrantPostgres {
+  user_key: EcdhKeyPostgres;
+  own_key: EcdhKeyPostgres;
+  profile: UserProfilePostgres;
+}
+
+export const addProfileGrantToRow = (
+  // row: T,
+  grant: GrantWithProfile | null
+): ProfileGrantRow => {
+  const row: ProfileGrantRow = {
+    first_name: null,
+    last_name: null,
+    profile_picture: null,
+    public_key: null,
+    own_key_id: null,
+    own_private_key: null,
+    encrypted_profile_sym_key: null,
+  };
+  if (grant != null) {
+    row.encrypted_profile_sym_key = grant.encrypted_sym_key;
+    if (grant.user_key != null) {
+      row.public_key = grant.user_key.public_key;
+    }
+    if (grant.own_key != null) {
+      row.own_key_id = grant.own_key.id;
+      row.own_private_key = grant.own_key.private_key;
+    }
+    if (grant.profile != null) {
+      row.first_name = grant.profile.first_name;
+      row.last_name = grant.profile.last_name;
+      row.profile_picture = grant.profile.profile_picture;
+    }
+  }
+  return row;
+};
+
+export const fetchProfilesWithGrants = async (
+  own_id: string,
   user_ids: Array<string>
 ) => {
-  const [profileGrants, ownProfileGrants] = await Promise.all([
-    postgres<ProfileGrantPostgres>("profile_grants")
-      .whereIn("user_id", user_ids)
-      .where("grantee_id", user_id)
-      .select(),
-    postgres<ProfileGrantPostgres>("profile_grants")
-      .whereIn("grantee_id", user_ids)
-      .where("user_id", user_id)
-      .select(),
-  ]);
-  const [followerKeys, ownKeys] = await Promise.all([
-    postgres<EcdhKeyPostgres>("user_echd_keys").whereIn(
-      "id",
-      profileGrants.map((a) => a.user_key_id)
-    ),
-    postgres<EcdhKeyPostgres>("user_echd_keys").whereIn(
-      "id",
-      ownProfileGrants.map((a) => a.user_key_id)
-    ),
-  ]);
-  const userGrants = [];
-  for (const profileGrant of profileGrants) {
-    const followerKey = followerKeys.find(
-      (a) => a.id === profileGrant.user_key_id
-    );
-    userGrants.push({ ...profileGrant, user_key: followerKey });
+  const grants = await postgres<ProfileGrantPostgres>("profile_grants")
+    .whereIn("user_id", user_ids)
+    .where("grantee_id", own_id);
+  const userKeyIds = grants.map((a) => a.user_key_id);
+  const ownKeyIds = grants.map((a) => a.grantee_key_id);
+  const keyIds = await postgres<EcdhKeyPostgres>("user_echd_keys").whereIn(
+    "id",
+    [...userKeyIds, ...ownKeyIds]
+  );
+  const profiles = await postgres<UserProfilePostgres>("user_profile").whereIn(
+    "user_id",
+    user_ids
+  );
+  const profileResponse: Array<GrantWithProfile> = [];
+  for (const grant of grants) {
+    const userKey = keyIds.find((a) => a.id == grant.user_key_id);
+    const ownKey = keyIds.find((a) => a.id == grant.grantee_key_id);
+    const profile = profiles.find((a) => a.user_id == grant.user_id);
+    profileResponse.push({
+      ...grant,
+      user_key: userKey,
+      own_key: ownKey,
+      profile,
+    });
   }
-  const ownGrants = [];
-  for (const ownProfileGrant of ownProfileGrants) {
-    const ownKey = ownKeys.find((a) => a.id === ownProfileGrant.user_key_id);
-    ownGrants.push({ ...ownProfileGrant, user_key: ownKey });
-  }
-  return {
-    ownGrants: ownGrants,
-    userGrants: userGrants,
-  };
+  return profileResponse;
 };
 
 export const claimEcdhKeys = async (ids: Array<string>): Promise<void> => {

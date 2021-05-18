@@ -39,13 +39,13 @@ export const expressAppHandler = <
     user_id: res.locals.user_id,
   };
   const loggableRequest = {
-    // path: req.path,
-    // params: req.params,
-    // query: req.query,
-    // body: req.body,
-    // ip: req.ip,
-    // headers: req.headers,
-    // locals: res.locals,
+    path: req.path,
+    params: req.params,
+    query: req.query,
+    body: req.body,
+    ip: req.ip,
+    headers: req.headers,
+    locals: res.locals,
   };
   fn(reqParams)
     .then(({ error, response }) => {

@@ -19,6 +19,7 @@ import postgres from "../src/db/postgres";
 import { generateImage } from "./utils/generateImage";
 import { PostsFeedResponse, PostResponse } from "../src/service/FeedService";
 import { GroupResponse } from "../src/controller/GroupController";
+import { ApprovalResponse } from "../src/interfaces/responses/UserResponses";
 
 interface GeneratedUser {
   credentials: {
@@ -498,12 +499,13 @@ describe("User functions", () => {
       .set({ ...headers, Authorization: `Bearer ${token2}` });
     expect(response.status).toEqual(200);
     expect(response.body.total).toEqual(1);
-    expect(response.body.data[0].follower_id).toEqual(user1.id);
-    const publicKey = response.body.data[0].follower_public_key;
-    const own_key_id = response.body.data[0].own_key_id;
+    const data: Array<ApprovalResponse> = response.body.data;
+    expect(data[0].follower_id).toEqual(user1.id);
+    const publicKey = data[0].public_key;
+    const own_key_id = data[0].own_key_id;
     const follower_encrypted_profile_sym_key =
-      response.body.data[0].follower_encrypted_profile_sym_key;
-    const first_name = response.body.data[0].first_name;
+      data[0].encrypted_profile_sym_key;
+    const first_name = data[0].first_name;
     const ownKeyPair = user2.keys.ecdhKeys.find((a) => a.id == own_key_id);
     expect(ownKeyPair).not.toBeNull();
     const privateKey = await symDecrypt(
@@ -627,7 +629,7 @@ describe("User functions", () => {
     const group_sym_key_encrypted = keys[posts[0].key_id];
     const privateKey = await symDecrypt(
       user1.encryption_key,
-      user.own_encrypted_private_key
+      user.own_private_key
     );
     const derivedKey = await deriveExchangeSymKey(
       user.public_key,

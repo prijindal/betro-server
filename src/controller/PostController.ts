@@ -5,13 +5,10 @@ import {
   createPostRedisTrigger,
 } from "../service/PostService";
 import { AppHandlerFunction } from "./expressHelper";
-import {
-  postProcessPosts,
-  PostResponse,
-  PostUserResponse,
-} from "../service/FeedService";
+import { postProcessPosts, PostResponse } from "../service/FeedService";
 import postgres from "../db/postgres";
 import redis from "../db/redis";
+import { PostUserResponse } from "../interfaces/responses/UserResponses";
 
 export interface PostCreateRequest {
   group_id: string;
