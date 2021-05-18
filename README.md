@@ -6,3 +6,9 @@
 [![Known Vulnerabilities](https://snyk.io/test/github/betro-app/betro-server/badge.svg)](https://snyk.io/test/github/betro-app/betro-server)
 [![CodeQL Analysis](https://github.com/betro-app/betro-server/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/betro-app/betro-server/actions/workflows/codeql-analysis.yml)
 [![Gitter](https://badges.gitter.im/betroapp/community.svg)](https://gitter.im/betroapp/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+
+## Building
+
+```
+npm run build
+```
