@@ -1,111 +1,12 @@
-import "betro-js-lib/dist/setupNodePollyfill";
-import { Express } from "express";
-import { includes, random } from "lodash";
-import faker from "faker";
-import BetroApi, { UserSettingsType } from "betro-js-client";
-import {
-  getMasterKey,
-  getMasterHash,
-  getEncryptionKey,
-  symEncrypt,
-  symDecrypt,
-} from "betro-js-lib";
-import { initServer } from "../src/app";
-import postgres from "../src/db/postgres";
-import { generateImage } from "./utils/generateImage";
-import { GroupResponse } from "../src/controller/GroupController";
+import { UserSettingsType } from "betro-js-client";
+import { symEncrypt, symDecrypt } from "betro-js-lib";
+import { GeneratedUser, generateUsers } from "./generateUsers";
 
-interface GeneratedUser {
-  credentials: {
-    username: string;
-    email: string;
-    master_hash: string;
-  };
-  profile: {
-    first_name: string;
-    last_name: string;
-    profile_picture: Buffer;
-  };
-  password: string;
-  encryption_key: string;
-  keys: {
-    // publicKey?: string;
-    // privateKey?: string;
-    groupSymKey?: string;
-    profileSymKey?: string;
-    ecdhKeys?: Array<{ id: string; public_key: string; private_key: string }>;
-  };
-  groups?: Array<GroupResponse>;
-  id?: string;
-  api: BetroApi;
-}
-
-const generateUsers = async (
-  port: string,
-  n: number = 2
-): Promise<Array<GeneratedUser>> => {
-  const users: Array<GeneratedUser> = [];
-  for (let index = 0; index < n; index++) {
-    let email = faker.internet.email();
-    while (
-      includes(
-        users.map((a) => a.credentials.email),
-        email
-      )
-    ) {
-      email = faker.internet.email();
-    }
-    let username = faker.internet.userName();
-    while (
-      includes(
-        users.map((a) => a.credentials.username),
-        username
-      )
-    ) {
-      username = faker.internet.userName();
-    }
-    const password = faker.internet.password();
-    const masterKey = await getMasterKey(email, password);
-    const master_hash = await getMasterHash(masterKey, password);
-    const encryption_key = await getEncryptionKey(masterKey);
-    users.push({
-      credentials: {
-        username: username,
-        email: email,
-        master_hash: master_hash,
-      },
-      profile: {
-        first_name: faker.name.firstName(),
-        last_name: faker.name.lastName(),
-        profile_picture: generateImage(800, 600, 80),
-      },
-      password,
-      encryption_key,
-      keys: {},
-      api: new BetroApi(`http://localhost:${port}`),
-    });
-  }
-  return users;
-};
-
-const deleteUser = async (user: GeneratedUser): Promise<boolean> => {
-  const queryResponse = await postgres("users")
-    .where({ email: user.credentials.email })
-    .delete();
-  return queryResponse == 1;
-};
-
-describe("User functions", () => {
+export const runTests = (port: string): void => {
   let users: Array<GeneratedUser> = [];
   const tokenMap: { [email: string]: string } = {};
-  let app: Express;
-  const port = random(1025, 6000).toString();
-  beforeAll(async (done) => {
-    app = await initServer(port);
+  beforeAll(async () => {
     users = await generateUsers(port);
-    app.listen(port, () => {
-      done();
-    });
   });
   it("Check email availability", async () => {
     for await (const user of users) {
@@ -191,7 +92,7 @@ describe("User functions", () => {
         const profile = await user.api.account.updateProfile(
           user.profile.first_name,
           user.profile.last_name,
-          generateImage(500, 500, 80)
+          Buffer.from("jc3o9chn32oc3")
         );
         expect(profile.first_name).toBeTruthy();
         expect(profile.last_name).toBeTruthy();
@@ -469,9 +370,4 @@ describe("User functions", () => {
       }
     }
   });
-  afterAll(async () => {
-    for await (const user of users) {
-      await deleteUser(user);
-    }
-  });
-});
+};
