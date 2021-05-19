@@ -14,7 +14,7 @@ if (fs.existsSync(".env")) {
 
 export const ENVIRONMENT = process.env.NODE_ENV || "development";
 
-export const PORT = process.env["PORT"];
+export const PORT = process.env["PORT"] || "4000";
 export const POSTGRES_URI = process.env["POSTGRES_URI"];
 export const REDIS_URI = process.env["REDIS_URI"];
 export const SECRET = process.env["SECRET"];

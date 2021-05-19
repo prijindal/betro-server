@@ -20,11 +20,11 @@ import postRoutes from "./routes/postRoutes";
 import notificationRoutes from "./routes/notificationRoutes";
 import settingsRoutes from "./routes/settingsRoutes";
 
-export async function initServer(): Promise<express.Express> {
+export async function initServer(PORT: string): Promise<express.Express> {
   const app = express();
   app.set("trust proxy", 1);
 
-  app.set("port", process.env.PORT || 4000);
+  app.set("port", PORT);
   app.disable("x-powered-by");
   app.use(helmet());
   app.use(cors());

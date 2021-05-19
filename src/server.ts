@@ -6,7 +6,7 @@ import { initServer } from "./app";
  * Error Handler. Provides full stack - remove for production
  */
 
-initServer().then((app) => {
+initServer(PORT).then((app) => {
   /**
    * Start Express server.
    */
