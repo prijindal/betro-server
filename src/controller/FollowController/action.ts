@@ -6,7 +6,6 @@ import {
 } from "../../interfaces/database";
 import { fetchUserGroup } from "../../service/GroupService";
 import { fetchUsers } from "../../service/UserService";
-import { fetchProfile } from "../../service/UserProfileService";
 import { AppHandlerFunction } from "../expressHelper";
 import { sendUserNotification } from "../NotificationController";
 import { createUserFeed } from "../../service/FeedService";
@@ -140,8 +139,7 @@ export const ApproveUserHandler: AppHandlerFunction<
     };
   } else {
     const group = await fetchUserGroup(user_id, group_id);
-    const profile = await fetchProfile(user_id);
-    if (group == null || profile == null) {
+    if (group == null) {
       return {
         error: {
           status: 404,
