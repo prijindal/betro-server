@@ -13,10 +13,12 @@ const deleteUsers = async (): Promise<boolean> => {
 describe("User functions", () => {
   let app: Express;
   const port = random(1025, 6000).toString();
-  beforeAll(async (done) => {
-    app = await initServer(port);
-    app.listen(port, () => {
-      done();
+  beforeAll((done) => {
+    initServer(port).then((a) => {
+      app = a;
+      app.listen(port, () => {
+        done();
+      });
     });
   });
 
