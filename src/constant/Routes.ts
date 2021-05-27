@@ -8,6 +8,7 @@ const ROUTES = {
   FOLLOW: "/api/follow",
   USER: "/api/user",
   POST: "/api/post",
+  MESSAGE: "/api/messages",
   NOTIFICATIONS: "/api/notifications",
   SETTINGS: "/api/settings",
 };

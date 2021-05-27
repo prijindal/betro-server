@@ -4,7 +4,7 @@ import postgres from "../db/postgres";
 
 export const tableCount = async <T extends { id: string }>(
   table: string,
-  where: Knex.DbRecord<Knex.ResolveTableType<T>>
+  where: Knex.DbRecord<Knex.ResolveTableType<T>> | WhereBuilder<T>
 ): Promise<number> => {
   const queryResult = await postgres<T>(table)
     .where(where)
@@ -48,11 +48,15 @@ export const limitToInt = (
   return limit;
 };
 
+type WhereBuilder<T extends { id: string }> = (
+  raw: Knex.QueryBuilder<T, any>
+) => void;
+
 export const UserPaginationWrapper = async <
   T extends { id: string; created_at: Date }
 >(
   table: string,
-  where: Knex.DbRecord<Knex.ResolveTableType<T>>,
+  where: Knex.DbRecord<Knex.ResolveTableType<T>> | WhereBuilder<T>,
   limitStr: string,
   afterStr: string
 ): Promise<{

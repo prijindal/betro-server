@@ -19,6 +19,7 @@ import userRoutes from "./routes/userRoutes";
 import postRoutes from "./routes/postRoutes";
 import notificationRoutes from "./routes/notificationRoutes";
 import settingsRoutes from "./routes/settingsRoutes";
+import messageRoutes from "./routes/messageRoutes";
 
 export async function initServer(PORT: string): Promise<express.Express> {
   const app = express();
@@ -47,6 +48,7 @@ export async function initServer(PORT: string): Promise<express.Express> {
     userRateLimiter,
     notificationRoutes
   );
+  app.use(ROUTES.MESSAGE, authAccesstoken, userRateLimiter, messageRoutes);
   app.use(ROUTES.SETTINGS, authAccesstoken, userRateLimiter, settingsRoutes);
 
   return app;

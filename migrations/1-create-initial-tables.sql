@@ -223,6 +223,7 @@ CREATE TABLE conversations (
   receiver_id uuid NOT NULL,
   sender_key_id uuid NOT NULL,
   receiver_key_id uuid NOT NULL,
+  created_at timestamptz DEFAULT NOW(),
   CONSTRAINT fk_sender
     FOREIGN KEY(sender_id) 
     REFERENCES users(id)

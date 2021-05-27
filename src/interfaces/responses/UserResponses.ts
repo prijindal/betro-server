@@ -50,3 +50,8 @@ export interface SearchResult extends ProfileGrantRow {
 export interface PostUserResponse extends ProfileGrantRow {
   username: string;
 }
+
+export interface ConversationResponse extends ProfileGrantRow {
+  id: string;
+  user_id: string;
+}
