@@ -4,6 +4,7 @@ import {
   EcdhKeyPostgres,
   ConversationPostgres,
   MessagePostgres,
+  UserPostgres,
 } from "../interfaces/database";
 import { PaginatedResponse } from "../interfaces/responses/PaginatedResponse";
 import { ConversationResponse } from "../interfaces/responses/UserResponses";
@@ -12,21 +13,62 @@ import {
   addProfileGrantToRow,
   fetchProfilesWithGrants,
 } from "../service/ProfileGrantService";
+import { fetchUsers } from "../service/UserService";
 
 export const GetConversationHandler: AppHandlerFunction<
   {
     user_id: string;
     id: string;
   },
-  ConversationPostgres
+  ConversationResponse
 > = async (req) => {
   const own_id = req.user_id;
   const conversation = await postgres<ConversationPostgres>("conversations")
     .where({ sender_id: own_id, id: req.id })
     .orWhere({ receiver_id: own_id, id: req.id })
     .first();
+  const keys = await postgres<EcdhKeyPostgres>("user_echd_keys").whereIn("id", [
+    conversation.sender_key_id,
+    conversation.receiver_key_id,
+  ]);
+  let own_key_id = conversation.sender_key_id;
+  let user_key_id = conversation.receiver_key_id;
+  let user_id = conversation.receiver_id;
+  if (user_id === own_id) {
+    // Scenario where receiver is own
+    user_id = conversation.sender_id;
+    user_key_id = conversation.sender_key_id;
+    own_key_id = conversation.receiver_key_id;
+  }
+  const user = await postgres<UserPostgres>("users")
+    .select("*")
+    .where("id", user_id)
+    .first();
+  const userProfileWithGrants = await fetchProfilesWithGrants(own_id, [
+    user_id,
+  ]);
+  const userProfileWithGrant = userProfileWithGrants.find(
+    (a) => a.user_id == user_id
+  );
+  const ownKey = keys.find((a) => a.id == own_key_id);
+  const userKey = keys.find((a) => a.id == user_key_id);
+  let response: ConversationResponse = {
+    id: conversation.id,
+    user_id: user_id,
+    username: user.username,
+    own_key_id: own_key_id,
+    own_private_key: ownKey.private_key,
+    public_key: userKey != null ? userKey.public_key : null,
+    first_name: null,
+    last_name: null,
+    profile_picture: null,
+    encrypted_profile_sym_key: null,
+  };
+  if (userProfileWithGrant != null) {
+    response = { ...response, ...addProfileGrantToRow(userProfileWithGrant) };
+  }
   return {
-    response: conversation,
+    response: response,
     error: null,
   };
 };
@@ -45,9 +87,13 @@ export const GetConversationsHandler: AppHandlerFunction<
       req.limit,
       req.after
     );
+  const users = await fetchUsers([
+    ...data.map((a) => a.sender_id),
+    ...data.map((a) => a.receiver_id),
+  ]);
   const userProfileWithGrants = await fetchProfilesWithGrants(
     own_id,
-    data.map((a) => a.id)
+    users.map((a) => a.id)
   );
   const keys = await postgres<EcdhKeyPostgres>("user_echd_keys").whereIn("id", [
     ...data.map((a) => a.sender_key_id),
@@ -68,11 +114,13 @@ export const GetConversationsHandler: AppHandlerFunction<
     const userProfileWithGrant = userProfileWithGrants.find(
       (a) => a.user_id == user_id
     );
+    const user = users.find((a) => a.id == user_id);
     const ownKey = keys.find((a) => a.id == own_key_id);
     const userKey = keys.find((a) => a.id == user_key_id);
     let response: ConversationResponse = {
       id: conversation.id,
       user_id: user_id,
+      username: user.username,
       own_key_id: own_key_id,
       own_private_key: ownKey.private_key,
       public_key: userKey != null ? userKey.public_key : null,
@@ -163,9 +211,11 @@ export const CreateConversationHandler: AppHandlerFunction<
       response: null,
     };
   }
+  const user = await fetchUsers([req.receiver_id]);
   let response: ConversationResponse = {
     id: conversations[0].id,
     user_id: conversations[0].receiver_id,
+    username: user[0].username,
     own_key_id: conversations[0].sender_key_id,
     own_private_key: conversations[0].receiver_key_id,
     public_key: receiverUserId.public_key,
