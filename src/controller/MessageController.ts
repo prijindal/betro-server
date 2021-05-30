@@ -171,8 +171,8 @@ export const CreateConversationHandler: AppHandlerFunction<
   let sender_key_id = req.sender_key_id;
   let receiver_key_id = req.receiver_key_id;
   if (profileWithGrants.length > 0) {
-    sender_key_id = profileWithGrants[0].user_key_id;
-    receiver_key_id = profileWithGrants[0].grantee_key_id;
+    sender_key_id = profileWithGrants[0].grantee_key_id;
+    receiver_key_id = profileWithGrants[0].user_key_id;
   }
   const senderUserId = await postgres<EcdhKeyPostgres>("user_echd_keys")
     .where({ id: sender_key_id })
