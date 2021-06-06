@@ -70,7 +70,7 @@
     "@typescript-eslint/parser": "^4.26.0",
     "betro-js-client": "git+https://prijindal@github.com/betro-app/betro-js-client.git#4c1280c2596af1605a6c9bbaca0c59a6b6b85503",
     "concurrently": "^6.2.0",
-    "eslint": "^7.27.0",
+    "eslint": "^7.28.0",
     "eslint-config-prettier": "^8.3.0",
     "jest": "^27.0.3",
     "nodemon": "^2.0.7",
