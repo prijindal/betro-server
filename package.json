@@ -66,7 +66,7 @@
     "@types/rate-limit-redis": "^1.7.1",
     "@types/throttle-debounce": "^2.1.0",
     "@types/uuid": "^8.3.0",
-    "@typescript-eslint/eslint-plugin": "^4.26.0",
+    "@typescript-eslint/eslint-plugin": "^4.26.1",
     "@typescript-eslint/parser": "^4.26.0",
     "betro-js-client": "git+https://prijindal@github.com/betro-app/betro-js-client.git#01b9588d60635a3fe232dd0a5c68cfd5ee35c453",
     "concurrently": "^6.2.0",
