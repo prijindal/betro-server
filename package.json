@@ -58,7 +58,7 @@
     "@types/faker": "^5.5.6",
     "@types/ioredis": "^4.26.4",
     "@types/jest": "^26.0.23",
-    "@types/jsonwebtoken": "^8.5.1",
+    "@types/jsonwebtoken": "^8.5.2",
     "@types/lodash": "^4.14.170",
     "@types/node": "^15.12.2",
     "@types/pg": "^8.6.0",
