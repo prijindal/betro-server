@@ -6,6 +6,11 @@ services:
     environment:
       POSTGRES_URI: postgres://betro:betro@database:5432/betro
       REDIS_URI: redis://redis:6379
+      SECRET: 7c6626f1-2f52-4629-ae09-7d43453f3a01
+      NODE_ENV: production
+      LOGGER_LEVEL: info
+      ENABLE_RATE_LIMIT: "false"
+      PORT: 4000
     links:
       - redis
       - database
