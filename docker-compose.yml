@@ -1,0 +1,33 @@
+services:
+  server:
+    image: betro/server:latest
+    ports:
+      - "4000:4000"
+    environment:
+      POSTGRES_URI: postgres://betro:betro@database:5432/betro
+      REDIS_URI: redis://redis:6379
+    links:
+      - redis
+      - database
+  redis:
+    image: redis
+  database:
+    image: "postgres:latest"
+    environment:
+      POSTGRES_USER: betro # The PostgreSQL user (useful to connect to the database)
+      POSTGRES_PASSWORD: betro # The PostgreSQL password (useful to connect to the database)
+      POSTGRES_DB: betro # The PostgreSQL default database (automatically created at first launch)
+  migration:
+    image: betro/server:latest
+    command:
+      [
+        "./wait-for-it/wait-for-it.sh",
+        "database:5432",
+        "--",
+        "node",
+        "dist/scripts/migration.js",
+      ]
+    environment:
+      POSTGRES_URI: postgres://betro:betro@database:5432/betro
+    links:
+      - database

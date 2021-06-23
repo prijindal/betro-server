@@ -10,5 +10,11 @@
 ## Building
 
 ```
-npm run build
+docker build . -t betro/server
+```
+
+## Running
+
+```
+docker-compose up -d
 ```
