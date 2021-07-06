@@ -15,7 +15,7 @@ services:
       - redis
       - database
   redis:
-    image: redis
+    image: eqalpha/keydb
   database:
     image: "postgres:latest"
     environment:
