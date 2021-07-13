@@ -153,18 +153,8 @@ export const CreateConversationHandler: AppHandlerFunction<
   const oldConversation = await postgres<ConversationPostgres>("conversations")
     .where({ sender_id: own_id, receiver_id: req.receiver_id })
     .orWhere({ sender_id: req.receiver_id, receiver_id: own_id })
-    .first()
-    .select("id");
-  if (oldConversation != null) {
-    return {
-      error: {
-        status: 404,
-        message: "Conversation already exists",
-        data: { req },
-      },
-      response: null,
-    };
-  }
+    .first();
+  let conversations = [oldConversation];
   const profileWithGrants = await fetchProfilesWithGrants(own_id, [
     req.receiver_id,
   ]);
@@ -197,14 +187,16 @@ export const CreateConversationHandler: AppHandlerFunction<
       response: null,
     };
   }
-  const conversations = await postgres<ConversationPostgres>("conversations")
-    .insert({
-      sender_id: own_id,
-      receiver_id: req.receiver_id,
-      sender_key_id: sender_key_id,
-      receiver_key_id: receiver_key_id,
-    })
-    .returning("*");
+  if (oldConversation == null) {
+    conversations = await postgres<ConversationPostgres>("conversations")
+      .insert({
+        sender_id: own_id,
+        receiver_id: req.receiver_id,
+        sender_key_id: sender_key_id,
+        receiver_key_id: receiver_key_id,
+      })
+      .returning("*");
+  }
   if (conversations.length == 0) {
     return {
       error: { status: 500, message: "Can't create conversation", data: null },
