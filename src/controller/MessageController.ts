@@ -292,8 +292,8 @@ export const CreateMessageHandler: AppHandlerFunction<
     };
   }
   const user_id = conversation.receiver_id
-  ? conversation.receiver_id
-  : conversation.sender_id;
+    ? conversation.receiver_id
+    : conversation.sender_id;
   sendMessage(user_id, message[0]);
   return {
     response: {

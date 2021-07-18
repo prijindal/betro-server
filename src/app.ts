@@ -21,8 +21,7 @@ import postRoutes from "./routes/postRoutes";
 import notificationRoutes from "./routes/notificationRoutes";
 import settingsRoutes from "./routes/settingsRoutes";
 import messageRoutes from "./routes/messageRoutes";
-import {messageWebSocketRoute} from "./routes/websocketRoutes";
-
+import { messageWebSocketRoute } from "./routes/websocketRoutes";
 
 export async function initServer(PORT: string): Promise<express.Express> {
   const app = express();
