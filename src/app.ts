@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import compression from "compression";
 import cookieParser from "cookie-parser";
+import expressWs from "express-ws";
 import helmet from "helmet";
 import ROUTES from "./constant/Routes";
 
@@ -20,9 +21,12 @@ import postRoutes from "./routes/postRoutes";
 import notificationRoutes from "./routes/notificationRoutes";
 import settingsRoutes from "./routes/settingsRoutes";
 import messageRoutes from "./routes/messageRoutes";
+import {messageWebSocketRoute} from "./routes/websocketRoutes";
+
 
 export async function initServer(PORT: string): Promise<express.Express> {
   const app = express();
+  const wsApp = expressWs(app);
   app.set("trust proxy", 1);
 
   app.set("port", PORT);
@@ -50,6 +54,8 @@ export async function initServer(PORT: string): Promise<express.Express> {
   );
   app.use(ROUTES.MESSAGE, authAccesstoken, userRateLimiter, messageRoutes);
   app.use(ROUTES.SETTINGS, authAccesstoken, userRateLimiter, settingsRoutes);
+
+  wsApp.app.ws("/messages", messageWebSocketRoute);
 
   return app;
 }

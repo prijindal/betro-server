@@ -14,6 +14,7 @@ import {
   fetchProfilesWithGrants,
 } from "../service/ProfileGrantService";
 import { fetchUsers } from "../service/UserService";
+import { sendMessage } from "../service/MessageListener";
 
 export const GetConversationHandler: AppHandlerFunction<
   {
@@ -290,6 +291,10 @@ export const CreateMessageHandler: AppHandlerFunction<
       error: { status: 500, message: "Some error occurred", data: null },
     };
   }
+  const user_id = conversation.receiver_id
+  ? conversation.receiver_id
+  : conversation.sender_id;
+  sendMessage(user_id, message[0]);
   return {
     response: {
       id: message[0].id,
