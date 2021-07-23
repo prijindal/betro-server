@@ -265,7 +265,7 @@ export const CreateMessageHandler: AppHandlerFunction<
     id: string;
     message: string;
   },
-  { id: string; created_at: Date }
+  MessagePostgres
 > = async (req) => {
   const own_id = req.user_id;
   const conversation = await postgres<ConversationPostgres>("conversations")
@@ -291,15 +291,13 @@ export const CreateMessageHandler: AppHandlerFunction<
       error: { status: 500, message: "Some error occurred", data: null },
     };
   }
-  const user_id = conversation.receiver_id
-    ? conversation.receiver_id
-    : conversation.sender_id;
+  const user_id =
+    conversation.receiver_id != own_id
+      ? conversation.receiver_id
+      : conversation.sender_id;
   sendMessage(user_id, message[0]);
   return {
-    response: {
-      id: message[0].id,
-      created_at: message[0].created_at,
-    },
+    response: message[0],
     error: null,
   };
 };
