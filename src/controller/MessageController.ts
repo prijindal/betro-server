@@ -14,7 +14,7 @@ import {
   fetchProfilesWithGrants,
 } from "../service/ProfileGrantService";
 import { fetchUsers } from "../service/UserService";
-import { sendMessage } from "../service/MessageListener";
+import { sendSocketMessage } from "../service/MessageListener";
 
 export const GetConversationHandler: AppHandlerFunction<
   {
@@ -295,7 +295,7 @@ export const CreateMessageHandler: AppHandlerFunction<
     conversation.receiver_id != own_id
       ? conversation.receiver_id
       : conversation.sender_id;
-  sendMessage(user_id, message[0]);
+  sendSocketMessage(user_id, message[0]);
   return {
     response: message[0],
     error: null,

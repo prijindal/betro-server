@@ -1,8 +1,13 @@
 import { AppHandlerFunction } from "./expressHelper";
 import { fetchUsers } from "../service/UserService";
 import { fetchProfile } from "../service/UserProfileService";
-import { FollowPostgres, UserNotification } from "../interfaces/database";
+import {
+  ConversationPostgres,
+  FollowPostgres,
+  UserNotification,
+} from "../interfaces/database";
 import { tableCount } from "../service/helper";
+import postgres from "../db/postgres";
 
 export interface WhoAmiResponse {
   user_id: string;
@@ -52,7 +57,8 @@ export type CountIncludeType =
   | "followers"
   | "followees"
   | "approvals"
-  | "posts";
+  | "posts"
+  | "conversations";
 
 export interface CountResponse {
   notifications?: number;
@@ -62,6 +68,7 @@ export interface CountResponse {
   followees?: number;
   approvals?: number;
   posts?: number;
+  conversations?: number;
 }
 
 export const GetCountsHandler: AppHandlerFunction<
@@ -102,6 +109,14 @@ export const GetCountsHandler: AppHandlerFunction<
         tableCount<UserNotification>("user_notifications", {
           user_id,
           read: false,
+        })
+      );
+    } else if (include_field == "conversations") {
+      promises.push(
+        tableCount<ConversationPostgres>("conversations", (builder) => {
+          builder
+            .where({ sender_id: user_id })
+            .orWhere({ receiver_id: user_id });
         })
       );
     } else {

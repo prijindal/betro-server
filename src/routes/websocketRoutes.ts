@@ -1,12 +1,19 @@
 import expressWs from "express-ws";
 
 import { parseUserFromToken } from "../middleware/authAccesstoken";
-import { addConnection } from "../service/MessageListener";
+import {
+  addSocketConnection,
+  removeUnusedSocketConnection,
+} from "../service/MessageListener";
 
 export const messageWebSocketRoute: expressWs.WebsocketRequestHandler = (
   ws,
   req
 ) => {
+  let socket_user_id: string;
+  ws.on("close", () => {
+    removeUnusedSocketConnection(socket_user_id);
+  });
   ws.on("message", async (msg) => {
     try {
       if (typeof msg == "string") {
@@ -19,7 +26,8 @@ export const messageWebSocketRoute: expressWs.WebsocketRequestHandler = (
             return;
           }
           const { user_id } = response;
-          addConnection(user_id, ws);
+          socket_user_id = user_id;
+          addSocketConnection(user_id, ws);
         } else {
           ws.close();
         }
