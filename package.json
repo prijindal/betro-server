@@ -38,7 +38,7 @@
     "express-ws": "^5.0.2",
     "faker": "^5.5.3",
     "helmet": "^4.6.0",
-    "ioredis": "^4.27.6",
+    "ioredis": "^4.27.7",
     "jpeg-js": "^0.4.3",
     "jsonwebtoken": "^8.5.1",
     "knex": "^0.95.8",
