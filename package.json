@@ -69,7 +69,7 @@
     "@types/throttle-debounce": "^2.1.0",
     "@types/uuid": "^8.3.1",
     "@typescript-eslint/eslint-plugin": "^4.28.4",
-    "@typescript-eslint/parser": "^4.28.4",
+    "@typescript-eslint/parser": "^4.28.5",
     "betro-js-client": "git+https://prijindal@github.com/betro-app/betro-js-client.git#ff30a0a7c7b1bdf4c23dd4b7e256597063e07d26",
     "concurrently": "^6.2.0",
     "eslint": "^7.31.0",
