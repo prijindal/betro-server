@@ -43,7 +43,7 @@
     "jsonwebtoken": "^8.5.1",
     "knex": "^0.95.8",
     "lodash": "^4.17.21",
-    "pg": "^8.6.0",
+    "pg": "^8.7.1",
     "pino": "^6.13.0",
     "postgres-migrations": "^5.3.0",
     "rate-limit-redis": "^2.1.0",
