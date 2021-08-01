@@ -64,7 +64,7 @@
     "@types/lodash": "^4.14.171",
     "@types/node": "^16.4.3",
     "@types/pg": "^8.6.1",
-    "@types/pino": "^6.3.9",
+    "@types/pino": "^6.3.11",
     "@types/rate-limit-redis": "^1.7.2",
     "@types/throttle-debounce": "^2.1.0",
     "@types/uuid": "^8.3.1",
