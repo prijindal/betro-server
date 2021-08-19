@@ -9,7 +9,7 @@ import {
   GraphQLFieldResolver,
   GraphQLFieldConfigArgumentMap,
 } from "graphql";
-import { graphqlWrapper } from "./helper";
+import { userAccessHandler } from "./helper";
 import {
   FetchOwnPostsHandler,
   GetHomeFeedHandler,
@@ -17,21 +17,19 @@ import {
 import { FeedPageInfo, PostsFeedResponse } from "../service/FeedService";
 import { AppHandlerFunction } from "src/controller/expressHelper";
 
-export const graphqlFeedHandler = <ReqBody, Res>(
-  fn: AppHandlerFunction<ReqBody & { user_id?: string }, Res>
+export const graphqlFeedHandler = <ReqBody>(
+  fn: AppHandlerFunction<ReqBody & { user_id?: string }, any>
 ) => {
   const handler: GraphQLFieldResolver<null, Request, ReqBody> = async (
     source,
     args,
-    context,
-    info
+    req
   ) => {
-    const response = await graphqlWrapper<any, any>(fn)(
-      source,
-      args,
-      context,
-      info
-    );
+    const user_id = await userAccessHandler(req);
+    const { response, error } = await fn({ ...args, user_id });
+    if (error != null) {
+      throw new Error(error.message);
+    }
     const {
       pageInfo,
       posts,
