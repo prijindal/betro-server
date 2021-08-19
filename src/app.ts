@@ -4,11 +4,13 @@ import compression from "compression";
 import cookieParser from "cookie-parser";
 import expressWs from "express-ws";
 import helmet from "helmet";
+import { graphqlHTTP } from "express-graphql";
 import ROUTES from "./constant/Routes";
 
 import { userRateLimiter, loginRateLimiter } from "./middleware/rateLimit";
 import { authAccesstoken } from "./middleware/authAccesstoken";
 
+import schema from "./graphql";
 import loginRoutes from "./routes/loginRoutes";
 import registerRoutes from "./routes/registerRoutes";
 import feedRoutes from "./routes/feedRoutes";
@@ -22,6 +24,7 @@ import notificationRoutes from "./routes/notificationRoutes";
 import settingsRoutes from "./routes/settingsRoutes";
 import messageRoutes from "./routes/messageRoutes";
 import { messageWebSocketRoute } from "./routes/websocketRoutes";
+import { ENVIRONMENT } from "./config";
 
 export async function initServer(PORT: string): Promise<express.Express> {
   const app = express();
@@ -30,12 +33,26 @@ export async function initServer(PORT: string): Promise<express.Express> {
 
   app.set("port", PORT);
   app.disable("x-powered-by");
-  app.use(helmet());
+  if (ENVIRONMENT !== "development") {
+    app.use(helmet());
+  }
   app.use(cors());
   app.use(cookieParser());
   app.use(compression());
   app.use(express.json({ limit: "50mb" }));
 
+  app.use(
+    "/graphql",
+    graphqlHTTP({
+      schema: schema,
+      graphiql:
+        ENVIRONMENT === "development"
+          ? {
+              headerEditorEnabled: true,
+            }
+          : false,
+    })
+  );
   app.use(ROUTES.LOGIN, loginRateLimiter, loginRoutes);
   app.use(ROUTES.REGISTER, loginRateLimiter, registerRoutes);
   app.use(ROUTES.FEED, authAccesstoken, userRateLimiter, feedRoutes);

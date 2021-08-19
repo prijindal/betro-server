@@ -72,15 +72,16 @@ export interface CountResponse {
 }
 
 export const GetCountsHandler: AppHandlerFunction<
-  { user_id: string; include_fields: string },
+  { user_id: string; include_fields: string | Array<CountIncludeType> },
   CountResponse
 > = async (req) => {
   const user_id = req.user_id;
   const response: CountResponse = {};
   const includeFieldsString = req.include_fields;
-  const include_fields: Array<CountIncludeType> = includeFieldsString.split(
-    ","
-  ) as Array<CountIncludeType>;
+  const include_fields: Array<CountIncludeType> =
+    typeof includeFieldsString == "string"
+      ? (includeFieldsString.split(",") as Array<CountIncludeType>)
+      : includeFieldsString;
   const tableMapping: { [k: string]: string } = {
     notifications: "user_notifications",
     settings: "user_settings",

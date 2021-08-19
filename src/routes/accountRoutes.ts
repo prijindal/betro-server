@@ -15,6 +15,7 @@ import {
   GetCountsHandler,
   WhoAmiResponse,
   WhoAmiHandler,
+  CountIncludeType,
 } from "../controller/AccountController";
 import { FetchOwnPostsHandler } from "../controller/FeedController";
 import { PostsFeedResponse } from "../service/FeedService";
@@ -27,9 +28,12 @@ router.get(
 );
 router.get(
   "/count",
-  expressWrapper<{}, CountResponse, {}, { include_fields: string }>(
-    GetCountsHandler
-  )
+  expressWrapper<
+    {},
+    CountResponse,
+    {},
+    { include_fields: string | Array<CountIncludeType> }
+  >(GetCountsHandler)
 );
 
 router.get(
