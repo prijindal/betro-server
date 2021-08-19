@@ -24,7 +24,7 @@ export const graphqlWrapper = <ReqBody, Res>(
   ) => {
     const user_id = await userAccessHandler(req);
     const { response, error } = await fn({ ...args, user_id });
-    if (error != null || response == null) {
+    if (error != null) {
       throw new Error(error.message);
     }
     return response;

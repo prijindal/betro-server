@@ -1,12 +1,22 @@
 import { GraphQLSchema, GraphQLObjectType } from "graphql";
 import { loginMutation } from "./login";
-import { whoAmiQuery, countQuery } from "./account";
+import {
+  whoAmiQuery,
+  countQuery,
+  profilePictureQuery,
+  profileQuery,
+  createProfileMutation,
+  updateProfileMutation,
+  ownPostsQuery,
+} from "./account";
 
 const schema = new GraphQLSchema({
   mutation: new GraphQLObjectType({
     name: "RootMutationType",
     fields: {
       login: loginMutation,
+      createProfile: createProfileMutation,
+      updateProfile: updateProfileMutation,
     },
   }),
   query: new GraphQLObjectType({
@@ -14,6 +24,9 @@ const schema = new GraphQLSchema({
     fields: {
       whoami: whoAmiQuery,
       count: countQuery,
+      profile_picture: profilePictureQuery,
+      profile: profileQuery,
+      ownPosts: ownPostsQuery,
     },
   }),
 });
