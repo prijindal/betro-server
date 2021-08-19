@@ -7,8 +7,8 @@ import {
   profileQuery,
   createProfileMutation,
   updateProfileMutation,
-  ownPostsQuery,
 } from "./account";
+import { ownPostsQuery, homeFeedQuery } from "./feed";
 
 const schema = new GraphQLSchema({
   mutation: new GraphQLObjectType({
@@ -27,6 +27,7 @@ const schema = new GraphQLSchema({
       profile_picture: profilePictureQuery,
       profile: profileQuery,
       ownPosts: ownPostsQuery,
+      homeFeed: homeFeedQuery,
     },
   }),
 });
