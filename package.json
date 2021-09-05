@@ -41,7 +41,7 @@
     "graphql": "^15.5.1",
     "graphql-relay": "^0.8.0",
     "helmet": "^4.6.0",
-    "ioredis": "^4.27.8",
+    "ioredis": "^4.27.9",
     "jpeg-js": "^0.4.3",
     "jsonwebtoken": "^8.5.1",
     "knex": "^0.95.10",
