@@ -4,13 +4,11 @@ import compression from "compression";
 import cookieParser from "cookie-parser";
 import expressWs from "express-ws";
 import helmet from "helmet";
-import { graphqlHTTP } from "express-graphql";
 import ROUTES from "./constant/Routes";
 
 import { userRateLimiter, loginRateLimiter } from "./middleware/rateLimit";
 import { authAccesstoken } from "./middleware/authAccesstoken";
 
-import schema from "./graphql";
 import loginRoutes from "./routes/loginRoutes";
 import registerRoutes from "./routes/registerRoutes";
 import feedRoutes from "./routes/feedRoutes";
@@ -41,18 +39,6 @@ export async function initServer(PORT: string): Promise<express.Express> {
   app.use(compression());
   app.use(express.json({ limit: "50mb" }));
 
-  app.use(
-    "/graphql",
-    graphqlHTTP({
-      schema: schema,
-      graphiql:
-        ENVIRONMENT === "development"
-          ? {
-              headerEditorEnabled: true,
-            }
-          : false,
-    })
-  );
   app.use(ROUTES.LOGIN, loginRateLimiter, loginRoutes);
   app.use(ROUTES.REGISTER, loginRateLimiter, registerRoutes);
   app.use(ROUTES.FEED, authAccesstoken, userRateLimiter, feedRoutes);

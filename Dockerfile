@@ -1,19 +1,7 @@
-FROM node:16
+FROM buildpack-deps:bullseye-scm
 
-WORKDIR /usr/src/app
+WORKDIR /app
 
-# This is our secret sauce
-RUN git clone https://github.com/vishnubob/wait-for-it.git
+COPY dist/ ./
 
-COPY ["package*.json","tsconfig.json",".eslintrc",".eslintignore", "./"]
-
-RUN npm install
-
-COPY migrations ./migrations
-COPY src ./src
-
-EXPOSE 4000
-
-RUN npm run build
-
-CMD [ "node", "dist/server.js" ]
+CMD [ "/app/dist/linux-x64/server" ]

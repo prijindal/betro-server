@@ -1,0 +1,13 @@
+services:
+  redis:
+    image: eqalpha/keydb
+    ports:
+      - "6379:6379"
+  database:
+    image: "postgres:latest"
+    environment:
+      POSTGRES_USER: betro # The PostgreSQL user (useful to connect to the database)
+      POSTGRES_PASSWORD: betro # The PostgreSQL password (useful to connect to the database)
+      POSTGRES_DB: betro # The PostgreSQL default database (automatically created at first launch)
+    ports:
+      - "5432:5432"
