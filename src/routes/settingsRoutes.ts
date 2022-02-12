@@ -1,22 +1,30 @@
 /* /api/settings */
 import { Router } from "express";
-import {
-  GetUserSettingsHandler,
-  SaveUserSettingHandler,
-} from "../controller/SettingsController";
+import { Service } from "typedi";
+import { SettingsController } from "../controller/SettingsController";
 import SettingsValidation from "../validation/SettingsValidation";
 import { validateRequest } from "../middleware/validateRequest";
 import { expressWrapper } from "../controller/expressHelper";
 
-const router = Router();
+@Service()
+export class SettingsRouter {
+  public router: Router;
 
-router.get("/", expressWrapper(GetUserSettingsHandler));
+  constructor(private settingsController: SettingsController) {
+    this.router = Router();
+    this.routes();
+  }
 
-router.post(
-  "/",
-  SettingsValidation.saveSettings(),
-  validateRequest,
-  expressWrapper(SaveUserSettingHandler)
-);
-
-export default router;
+  public routes() {
+    this.router.get(
+      "/",
+      expressWrapper(this.settingsController.GetUserSettingsHandler)
+    );
+    this.router.post(
+      "/",
+      SettingsValidation.saveSettings(),
+      validateRequest,
+      expressWrapper(this.settingsController.SaveUserSettingHandler)
+    );
+  }
+}

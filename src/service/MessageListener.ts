@@ -1,4 +1,4 @@
-import { MessagePostgres } from "src/interfaces/database";
+import { Message } from "../entities";
 import * as WebSocket from "ws";
 
 export const connections: { [k: string]: Array<WebSocket> } = {};
@@ -10,10 +10,7 @@ export const addSocketConnection = (user_id: string, ws: WebSocket) => {
   connections[user_id].push(ws);
 };
 
-export const sendSocketMessage = (
-  user_id: string,
-  message: MessagePostgres
-) => {
+export const sendSocketMessage = (user_id: string, message: Message) => {
   if (connections[user_id] != null) {
     for (const connection of connections[user_id]) {
       connection.send(JSON.stringify({ action: "message", ...message }));

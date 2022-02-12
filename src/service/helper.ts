@@ -1,20 +1,5 @@
 import { isEmpty, isNil } from "lodash";
-import { Knex } from "knex";
-import postgres from "../db/postgres";
-
-export const tableCount = async <T extends { id: string }>(
-  table: string,
-  where: Knex.DbRecord<Knex.ResolveTableType<T>> | WhereBuilder<T>
-): Promise<number> => {
-  const queryResult = await postgres<T>(table)
-    .where(where)
-    .count<Array<Record<"count", string>>>("id");
-  try {
-    return parseInt(queryResult[0].count, 10);
-  } catch (e) {
-    return 0;
-  }
-};
+import { ObjectLiteral, SelectQueryBuilder } from "typeorm";
 
 export const base64ToDate = (b64: string): Date | undefined => {
   if (!isNil(b64) && !isEmpty(b64)) {
@@ -48,15 +33,8 @@ export const limitToInt = (
   return limit;
 };
 
-type WhereBuilder<T extends { id: string }> = (
-  raw: Knex.QueryBuilder<T, any>
-) => void;
-
-export const UserPaginationWrapper = async <
-  T extends { id: string; created_at: Date }
->(
-  table: string,
-  where: Knex.DbRecord<Knex.ResolveTableType<T>> | WhereBuilder<T>,
+export const UserPaginationWrapper = async <T extends ObjectLiteral>(
+  queryBuilder: SelectQueryBuilder<T>,
   limitStr: string,
   afterStr: string
 ): Promise<{
@@ -67,29 +45,25 @@ export const UserPaginationWrapper = async <
   next: boolean;
 }> => {
   const after: Date | undefined = base64ToDate(afterStr);
-  const totalCount = await tableCount<T>(table, where);
+  const totalCount = await queryBuilder.getCount();
   const limit = limitToInt(limitStr);
-  const responseQuery: Knex.QueryBuilder<T> = postgres<T>(table)
-    .select("*")
-    .orderBy("created_at", "desc")
-    .limit(limit)
-    .where(where);
+  let responseQuery = queryBuilder;
   if (after != null) {
-    responseQuery.where("created_at", "<", after);
+    responseQuery = responseQuery.andWhere("created_at < :after", { after });
   }
-  const response = await responseQuery;
+  const response = await responseQuery
+    .orderBy("created_at", "DESC")
+    .limit(limit)
+    .getMany();
   let afterCursor = null;
   if (response.length > 0) {
     afterCursor = response[response.length - 1].created_at;
   }
-  const countAfterQuery = postgres<T>(table)
-    .count<Array<Record<"count", string>>>("id")
-    .where(where);
+  const countAfterQuery = responseQuery;
   if (afterCursor != null) {
-    countAfterQuery.where("created_at", "<", afterCursor);
+    countAfterQuery.andWhere("created_at < :after", { after: afterCursor });
   }
-  const countAfterResponse = await countAfterQuery;
-  const countAfter = parseInt(countAfterResponse[0].count, 10);
+  const countAfter = await countAfterQuery.getCount();
   return {
     data: response,
     limit,

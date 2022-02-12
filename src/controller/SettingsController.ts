@@ -1,7 +1,8 @@
-import { UserSettingsType, UserSettingPostgres } from "../interfaces/database";
-import { fetchUserSettings } from "../service/SettingsService";
-import postgres from "../db/postgres";
+import { Service } from "typedi";
+import { Repository } from "typeorm";
+import { InjectRepository } from "typeorm-typedi-extensions";
 import { AppHandlerFunction } from "./expressHelper";
+import { UserSettings, UserSettingsType } from "../entities";
 
 export interface UserSettingResponse {
   id: string;
@@ -10,42 +11,48 @@ export interface UserSettingResponse {
   enabled: boolean;
 }
 
-export const GetUserSettingsHandler: AppHandlerFunction<
-  { user_id: string },
-  Array<UserSettingResponse>
-> = async (req) => {
-  const user_id = req.user_id;
-  const settings = await fetchUserSettings(user_id);
-  return {
-    response: settings,
-    error: null,
-  };
-};
+@Service()
+export class SettingsController {
+  constructor(
+    @InjectRepository(UserSettings)
+    private readonly userSettingsRepository: Repository<UserSettings>
+  ) {}
 
-export const SaveUserSettingHandler: AppHandlerFunction<
-  { type: UserSettingsType; enabled: boolean; user_id: string },
-  UserSettingResponse
-> = async (req) => {
-  const user_id = req.user_id;
-  const type = req.type;
-  const enabled = req.enabled;
-
-  const queryResult = await postgres<UserSettingPostgres>("user_settings")
-    .where({ user_id, type })
-    .select("id");
-  let queryResponse: Array<UserSettingPostgres>;
-  if (queryResult.length == 0) {
-    queryResponse = await postgres<UserSettingPostgres>("user_settings")
-      .insert({ user_id, type, enabled })
-      .returning("*");
-  } else {
-    queryResponse = await postgres<UserSettingPostgres>("user_settings")
-      .where({ user_id, type })
-      .update({ enabled })
-      .returning("*");
-  }
-  return {
-    response: queryResponse[0],
-    error: null,
+  GetUserSettingsHandler: AppHandlerFunction<
+    { user_id: string },
+    Array<UserSettingResponse>
+  > = async (req) => {
+    const user_id = req.user_id;
+    const settings = await this.userSettingsRepository.find({ user_id });
+    return {
+      response: settings,
+      error: null,
+    };
   };
-};
+
+  SaveUserSettingHandler: AppHandlerFunction<
+    { type: UserSettingsType; enabled: boolean; user_id: string },
+    UserSettingResponse
+  > = async (req) => {
+    const user_id = req.user_id;
+    const type = req.type;
+    const enabled = req.enabled;
+    const queryResult = await this.userSettingsRepository.findOne({
+      user_id,
+      type,
+    });
+    let queryResponse: UserSettings;
+    if (queryResult == null) {
+      queryResponse = await this.userSettingsRepository.save(
+        this.userSettingsRepository.create({ user_id, type, enabled })
+      );
+    } else {
+      queryResult.enabled = enabled;
+      queryResponse = await this.userSettingsRepository.save(queryResult);
+    }
+    return {
+      response: queryResponse,
+      error: null,
+    };
+  };
+}

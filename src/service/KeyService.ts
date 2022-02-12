@@ -1,29 +1,42 @@
-import postgres from "../db/postgres";
-import { SymKeyPostgres } from "../interfaces/database";
+import { Service } from "typedi";
+import { Repository } from "typeorm";
+import { InjectRepository } from "typeorm-typedi-extensions";
+import { UserSymKey } from "../entities";
 
-export const createSymKey = async (sym_key: string): Promise<string> => {
-  const queryResult = await postgres<SymKeyPostgres>("user_sym_keys")
-    .insert({ sym_key })
-    .returning("*");
-  return queryResult[0].id;
-};
+@Service()
+export class KeyService {
+  constructor(
+    @InjectRepository(UserSymKey)
+    private readonly userSymKeyRepository: Repository<UserSymKey>
+  ) {}
+  createSymKey = async (sym_key: string): Promise<string> => {
+    const queryResult = await this.userSymKeyRepository.save(
+      this.userSymKeyRepository.create({
+        sym_key,
+      })
+    );
+    return queryResult.id;
+  };
 
-export const getSymKeys = async (
-  key_ids: Array<string>
-): Promise<{ [key_id: string]: string }> => {
-  const queryResult = await postgres<SymKeyPostgres>("user_sym_keys")
-    .select("id", "sym_key")
-    .whereIn("id", key_ids);
-  const keyMap: { [key_id: string]: string } = {};
-  queryResult.forEach((row) => {
-    keyMap[row.id] = row.sym_key;
-  });
-  return keyMap;
-};
+  getSymKeys = async (
+    key_ids: Array<string>
+  ): Promise<{ [key_id: string]: string }> => {
+    const queryResult =
+      key_ids.length === 0
+        ? []
+        : await this.userSymKeyRepository
+            .createQueryBuilder()
+            .where("id IN (:...key_ids)", { key_ids })
+            .getMany();
+    const keyMap: { [key_id: string]: string } = {};
+    queryResult.forEach((row) => {
+      keyMap[row.id] = row.sym_key;
+    });
+    return keyMap;
+  };
 
-export const deleteSymKey = async (key_id: string): Promise<boolean> => {
-  const queryResult = await postgres<SymKeyPostgres>("user_sym_keys")
-    .where({ id: key_id })
-    .delete();
-  return queryResult == 1;
-};
+  deleteSymKey = async (key_id: string): Promise<boolean> => {
+    const queryResult = await this.userSymKeyRepository.delete({ id: key_id });
+    return queryResult.affected == 1;
+  };
+}

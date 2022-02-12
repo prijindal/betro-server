@@ -4,6 +4,8 @@
     "module": "CommonJS",
     "allowJs": true,
     "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "rootDir": "src",
     "allowSyntheticDefaultImports": true,
     "target": "ESNext",

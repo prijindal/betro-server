@@ -1,14 +1,26 @@
 /* /api/notifications */
 import { Router } from "express";
+import { Service } from "typedi";
 import { expressWrapper } from "../controller/expressHelper";
-import {
-  GetNotificationsHandler,
-  ReadNotificationHandler,
-} from "../controller/NotificationController";
+import { NotificationController } from "../controller/NotificationController";
 
-const router = Router();
+@Service()
+export class NotificationRouter {
+  public router: Router;
 
-router.get("/", expressWrapper(GetNotificationsHandler));
-router.post("/read", expressWrapper(ReadNotificationHandler));
+  constructor(private notificationController: NotificationController) {
+    this.router = Router();
+    this.routes();
+  }
 
-export default router;
+  public routes() {
+    this.router.get(
+      "/",
+      expressWrapper(this.notificationController.GetNotificationsHandler)
+    );
+    this.router.post(
+      "/read",
+      expressWrapper(this.notificationController.ReadNotificationHandler)
+    );
+  }
+}

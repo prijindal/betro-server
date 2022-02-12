@@ -1,28 +1,33 @@
 /* /api/groups */
 import { Router } from "express";
-import {
-  GetGroupsHandler,
-  PostGroupHandler,
-  DeleteGroupHandler,
-} from "../controller/GroupController";
+import { Service } from "typedi";
+import { GroupController } from "../controller/GroupController";
 import GroupValidation from "../validation/GroupValidation";
 import { validateRequest } from "../middleware/validateRequest";
 import { expressWrapper } from "../controller/expressHelper";
 
-const router = Router();
+@Service()
+export class GroupRouter {
+  public router: Router;
 
-router.get("/", expressWrapper(GetGroupsHandler));
-router.post(
-  "/",
-  GroupValidation.create(),
-  validateRequest,
-  expressWrapper(PostGroupHandler)
-);
-router.delete(
-  "/:group_id",
-  GroupValidation.delete(),
-  validateRequest,
-  expressWrapper(DeleteGroupHandler)
-);
+  constructor(private groupController: GroupController) {
+    this.router = Router();
+    this.routes();
+  }
 
-export default router;
+  public routes() {
+    this.router.get("/", expressWrapper(this.groupController.GetGroupsHandler));
+    this.router.post(
+      "/",
+      GroupValidation.create(),
+      validateRequest,
+      expressWrapper(this.groupController.PostGroupHandler)
+    );
+    this.router.delete(
+      "/:group_id",
+      GroupValidation.delete(),
+      validateRequest,
+      expressWrapper(this.groupController.DeleteGroupHandler)
+    );
+  }
+}

@@ -1,21 +1,25 @@
 /* /api/login */
 import { Router, Response, Request } from "express";
+import { Service } from "typedi";
 import LoginValidation from "../validation/LoginValidation";
-import { LoginUserHandler } from "../controller/LoginController";
+import { LoginController } from "../controller/LoginController";
 import { validateRequest } from "../middleware/validateRequest";
 import { LoginBody } from "../service/LoginService";
 
-const router = Router();
+@Service()
+export class LoginRouter {
+  public router: Router;
 
-router.post(
-  "/",
-  LoginValidation.login(),
-  validateRequest,
-  async (
+  constructor(private loginController: LoginController) {
+    this.router = Router();
+    this.routes();
+  }
+
+  login = async (
     req: Request<{}, {}, LoginBody, { set_cookie: string }>,
     res: Response
   ) => {
-    const { response, error } = await LoginUserHandler({
+    const { response, error } = await this.loginController.loginUserHandler({
       ...req.body,
       user_agent: req.headers["user-agent"],
     });
@@ -33,7 +37,9 @@ router.post(
         res.status(200).send({});
       }
     }
-  }
-);
+  };
 
-export default router;
+  public routes() {
+    this.router.post("/", LoginValidation.login(), validateRequest, this.login);
+  }
+}

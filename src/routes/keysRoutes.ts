@@ -1,29 +1,43 @@
 /* /api/keys */
 import { Router } from "express";
+import { Service } from "typedi";
 import { expressWrapper } from "../controller/expressHelper";
-import {
-  GetKeysHandler,
-  GetEcdhKeysHandler,
-  GetEcdhUserKeyHandler,
-  CreateEcdhKeyHandler,
-  CreateEcdhKeysHandler,
-} from "../controller/KeyController";
+import { KeyController } from "../controller/KeyController";
 
-const router = Router();
+@Service()
+export class KeysRouter {
+  public router: Router;
 
-router.get(
-  "/",
-  expressWrapper<
-    {},
-    { sym_key: string },
-    {},
-    { include_echd_counts?: boolean }
-  >(GetKeysHandler)
-);
+  constructor(private keyController: KeyController) {
+    this.router = Router();
+    this.routes();
+  }
+  public routes() {
+    this.router.get(
+      "/",
+      expressWrapper<
+        {},
+        { sym_key: string },
+        {},
+        { include_echd_counts?: boolean }
+      >(this.keyController.getKeysHandler)
+    );
 
-router.get("/ecdh", expressWrapper(GetEcdhKeysHandler));
-router.get("/ecdh/user/:id", expressWrapper(GetEcdhUserKeyHandler));
-router.post("/ecdh", expressWrapper(CreateEcdhKeyHandler));
-router.post("/ecdh/upload", expressWrapper(CreateEcdhKeysHandler));
-
-export default router;
+    this.router.get(
+      "/ecdh",
+      expressWrapper(this.keyController.getEcdhKeysHandler)
+    );
+    this.router.get(
+      "/ecdh/user/:id",
+      expressWrapper(this.keyController.getEcdhUserKeyHandler)
+    );
+    this.router.post(
+      "/ecdh",
+      expressWrapper(this.keyController.createEcdhKeyHandler)
+    );
+    this.router.post(
+      "/ecdh/upload",
+      expressWrapper(this.keyController.createEcdhKeysHandler)
+    );
+  }
+}

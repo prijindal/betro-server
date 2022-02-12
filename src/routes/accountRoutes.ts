@@ -1,83 +1,100 @@
 /* /api/account */
 import { Router } from "express";
+import { Service } from "typedi";
 import AccountValidation from "../validation/AccountValidation";
 import { validateRequest } from "../middleware/validateRequest";
 import { expressWrapper } from "../controller/expressHelper";
 import {
   UserProfileResponse,
-  GetProfilePictureHandler,
-  GetProfileHandler,
-  PostProfileHandler,
-  PutProfileHandler,
+  ProfileController,
 } from "../controller/ProfileController";
 import {
   CountResponse,
-  GetCountsHandler,
   WhoAmiResponse,
-  WhoAmiHandler,
+  AccountController,
   CountIncludeType,
 } from "../controller/AccountController";
-import { FetchOwnPostsHandler } from "../controller/FeedController";
+import { FeedController } from "../controller/FeedController";
 import { PostsFeedResponse } from "../service/FeedService";
 
-const router = Router();
+@Service()
+export class AccountRouter {
+  public router: Router;
 
-router.get(
-  "/whoami",
-  expressWrapper<{}, WhoAmiResponse, {}, {}>(WhoAmiHandler)
-);
-router.get(
-  "/count",
-  expressWrapper<
-    {},
-    CountResponse,
-    {},
-    { include_fields: string | Array<CountIncludeType> }
-  >(GetCountsHandler)
-);
+  constructor(
+    private profileController: ProfileController,
+    private accountController: AccountController,
+    private feedController: FeedController
+  ) {
+    this.router = Router();
+    this.routes();
+  }
 
-router.get(
-  "/profile_picture",
-  expressWrapper<{}, string, {}, {}>(GetProfilePictureHandler)
-);
-router.get(
-  "/profile",
-  expressWrapper<{}, UserProfileResponse, {}, {}>(GetProfileHandler)
-);
-router.post(
-  "/profile",
-  AccountValidation.saveProfile(),
-  validateRequest,
-  expressWrapper<
-    {},
-    UserProfileResponse,
-    {
-      user_id: string;
-      first_name: string;
-      last_name: string;
-      profile_picture: string;
-    },
-    {}
-  >(PostProfileHandler)
-);
-router.put(
-  "/profile",
-  expressWrapper<
-    {},
-    UserProfileResponse,
-    {
-      user_id: string;
-      first_name?: string;
-      last_name?: string;
-      profile_picture?: string;
-    },
-    {}
-  >(PutProfileHandler)
-);
+  public routes() {
+    this.router.get(
+      "/whoami",
+      expressWrapper<{}, WhoAmiResponse, {}, {}>(
+        this.accountController.whoAmiHandler
+      )
+    );
+    this.router.get(
+      "/count",
+      expressWrapper<
+        {},
+        CountResponse,
+        {},
+        { include_fields: string | Array<CountIncludeType> }
+      >(this.accountController.getCountsHandler)
+    );
 
-router.get(
-  "/posts",
-  expressWrapper<{}, PostsFeedResponse, {}, {}>(FetchOwnPostsHandler)
-);
+    this.router.get(
+      "/profile_picture",
+      expressWrapper<{}, string, {}, {}>(
+        this.profileController.GetProfilePictureHandler
+      )
+    );
+    this.router.get(
+      "/profile",
+      expressWrapper<{}, UserProfileResponse, {}, {}>(
+        this.profileController.GetProfileHandler
+      )
+    );
+    this.router.post(
+      "/profile",
+      AccountValidation.saveProfile(),
+      validateRequest,
+      expressWrapper<
+        {},
+        UserProfileResponse,
+        {
+          user_id: string;
+          first_name: string;
+          last_name: string;
+          profile_picture: string;
+        },
+        {}
+      >(this.profileController.PostProfileHandler)
+    );
+    this.router.put(
+      "/profile",
+      expressWrapper<
+        {},
+        UserProfileResponse,
+        {
+          user_id: string;
+          first_name?: string;
+          last_name?: string;
+          profile_picture?: string;
+        },
+        {}
+      >(this.profileController.PutProfileHandler)
+    );
 
-export default router;
+    this.router.get(
+      "/posts",
+      expressWrapper<{}, PostsFeedResponse, {}, {}>(
+        this.feedController.fetchOwnPostsHandler
+      )
+    );
+  }
+}

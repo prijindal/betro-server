@@ -1,13 +1,17 @@
+import { Service } from "typedi";
+import { Repository } from "typeorm";
+import { InjectRepository } from "typeorm-typedi-extensions";
 import { AppHandlerFunction } from "./expressHelper";
-import { fetchUsers } from "../service/UserService";
-import { fetchProfile } from "../service/UserProfileService";
 import {
-  ConversationPostgres,
-  FollowPostgres,
   UserNotification,
-} from "../interfaces/database";
-import { tableCount } from "../service/helper";
-import postgres from "../db/postgres";
+  Post,
+  UserSettings,
+  GroupPolicy,
+  Conversation,
+  GroupFollowApproval,
+  User,
+  UserProfile,
+} from "../entities";
 
 export interface WhoAmiResponse {
   user_id: string;
@@ -16,39 +20,6 @@ export interface WhoAmiResponse {
   first_name?: string;
   last_name?: string;
 }
-
-export const WhoAmiHandler: AppHandlerFunction<
-  { user_id: string },
-  WhoAmiResponse
-> = async (req) => {
-  const user_id = req.user_id;
-  const users = await fetchUsers([user_id]);
-  if (users.length == 1) {
-    const response: WhoAmiResponse = {
-      user_id,
-      email: users[0].email,
-      username: users[0].username,
-    };
-    const profile = await fetchProfile(user_id, false);
-    if (profile != null) {
-      response.first_name = profile.first_name;
-      response.last_name = profile.last_name;
-    }
-    return {
-      response,
-      error: null,
-    };
-  } else {
-    return {
-      response: null,
-      error: {
-        status: 503,
-        message: "Some error occurred",
-        data: null,
-      },
-    };
-  }
-};
 
 export type CountIncludeType =
   | "notifications"
@@ -71,71 +42,138 @@ export interface CountResponse {
   conversations?: number;
 }
 
-export const GetCountsHandler: AppHandlerFunction<
-  { user_id: string; include_fields: string | Array<CountIncludeType> },
-  CountResponse
-> = async (req) => {
-  const user_id = req.user_id;
-  const response: CountResponse = {};
-  const includeFieldsString = req.include_fields;
-  const include_fields: Array<CountIncludeType> =
-    typeof includeFieldsString == "string"
-      ? (includeFieldsString.split(",") as Array<CountIncludeType>)
-      : includeFieldsString;
-  const tableMapping: { [k: string]: string } = {
-    notifications: "user_notifications",
-    settings: "user_settings",
-    groups: "group_policies",
-    followees: "group_follow_approvals",
-    posts: "posts",
-  };
-  const promises: Array<Promise<number>> = [];
-  for (const include_field of include_fields) {
-    if (include_field == "followers") {
-      promises.push(
-        tableCount<FollowPostgres>("group_follow_approvals", {
-          followee_id: user_id,
-          is_approved: true,
-        })
-      );
-    } else if (include_field == "approvals") {
-      promises.push(
-        tableCount<FollowPostgres>("group_follow_approvals", {
-          followee_id: user_id,
-          is_approved: false,
-        })
-      );
-    } else if (include_field == "notifications") {
-      promises.push(
-        tableCount<UserNotification>("user_notifications", {
+@Service()
+export class AccountController {
+  constructor(
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+    @InjectRepository(UserProfile)
+    private readonly userProfileRepository: Repository<UserProfile>,
+    @InjectRepository(Conversation)
+    private readonly conversationRepository: Repository<Conversation>,
+    @InjectRepository(GroupFollowApproval)
+    private readonly groupFollowApprovalRepository: Repository<GroupFollowApproval>,
+    @InjectRepository(UserNotification)
+    private readonly userNotificationRepository: Repository<UserNotification>,
+    @InjectRepository(Post)
+    private readonly postRepository: Repository<Post>,
+    @InjectRepository(UserSettings)
+    private readonly userSettingsRepository: Repository<UserSettings>,
+    @InjectRepository(GroupPolicy)
+    private readonly groupPolicyRepository: Repository<GroupPolicy>
+  ) {}
+
+  whoAmiHandler: AppHandlerFunction<{ user_id: string }, WhoAmiResponse> =
+    async (req) => {
+      const user_id = req.user_id;
+      const user = await this.userRepository.findOne({ id: user_id });
+      if (user == null) {
+        return {
+          response: null,
+          error: {
+            status: 503,
+            message: "Some error occurred",
+            data: null,
+          },
+        };
+      } else {
+        const response: WhoAmiResponse = {
           user_id,
-          read: false,
-        })
-      );
-    } else if (include_field == "conversations") {
-      promises.push(
-        tableCount<ConversationPostgres>("conversations", (builder) => {
-          builder
-            .where({ sender_id: user_id })
-            .orWhere({ receiver_id: user_id });
-        })
-      );
-    } else {
-      const table = tableMapping[include_field];
-      if (table != null) {
+          email: user.email,
+          username: user.username,
+        };
+        const profile = await this.userProfileRepository.findOne(
+          { user_id: user_id },
+          { select: ["id", "user_id", "first_name", "last_name"] }
+        );
+        if (profile != null) {
+          response.first_name = profile.first_name;
+          response.last_name = profile.last_name;
+        }
+        return {
+          response,
+          error: null,
+        };
+      }
+    };
+
+  getCountsHandler: AppHandlerFunction<
+    { user_id: string; include_fields: string | Array<CountIncludeType> },
+    CountResponse
+  > = async (req) => {
+    const user_id = req.user_id;
+    const response: CountResponse = {};
+    const includeFieldsString = req.include_fields;
+    const include_fields: Array<CountIncludeType> =
+      typeof includeFieldsString == "string"
+        ? (includeFieldsString.split(",") as Array<CountIncludeType>)
+        : includeFieldsString;
+    const promises: Array<Promise<number>> = [];
+    for (const include_field of include_fields) {
+      if (include_field == "followers") {
         promises.push(
-          tableCount<{ user_id: string; id: string }>(table, { user_id })
+          this.groupFollowApprovalRepository.count({
+            followee_id: user_id,
+            is_approved: true,
+          })
+        );
+      } else if (include_field == "approvals") {
+        promises.push(
+          this.groupFollowApprovalRepository.count({
+            followee_id: user_id,
+            is_approved: false,
+          })
+        );
+      } else if (include_field == "notifications") {
+        promises.push(
+          this.userNotificationRepository.count({
+            user_id,
+            read: false,
+          })
+        );
+      } else if (include_field == "conversations") {
+        promises.push(
+          this.conversationRepository
+            .createQueryBuilder()
+            .where("sender_id = :user_id OR receiver_id = :user_id", {
+              user_id: user_id,
+            })
+            .getCount()
+        );
+      } else if (include_field == "followees") {
+        promises.push(
+          this.groupFollowApprovalRepository.count({
+            user_id,
+          })
+        );
+      } else if (include_field == "posts") {
+        promises.push(
+          this.postRepository.count({
+            user_id,
+          })
+        );
+      } else if (include_field == "settings") {
+        promises.push(
+          this.userSettingsRepository.count({
+            user_id,
+          })
+        );
+      } else if (include_field == "groups") {
+        promises.push(
+          this.groupPolicyRepository.count({
+            user_id,
+          })
         );
       }
     }
-  }
-  const resp = await Promise.all(promises);
-  for (let index = 0; index < include_fields.length; index++) {
-    const include_field = include_fields[index];
-    response[include_field] = resp[index];
-  }
-  return {
-    response,
-    error: null,
+    const resp = await Promise.all(promises);
+    for (let index = 0; index < include_fields.length; index++) {
+      const include_field = include_fields[index];
+      response[include_field] = resp[index];
+    }
+    return {
+      response,
+      error: null,
+    };
   };
-};
+}

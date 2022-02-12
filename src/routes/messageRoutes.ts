@@ -1,21 +1,39 @@
 /* /api/messages */
 import { Router } from "express";
+import { Service } from "typedi";
 import { expressWrapper } from "../controller/expressHelper";
-import {
-  GetConversationsHandler,
-  CreateConversationHandler,
-  GetConversationHandler,
-  GetMessagesHandler,
-  CreateMessageHandler,
-} from "../controller/MessageController";
+import { MessageController } from "../controller/MessageController";
 
-const router = Router();
+@Service()
+export class MessageRouter {
+  public router: Router;
 
-router.get("/", expressWrapper(GetConversationsHandler));
-router.post("/", expressWrapper(CreateConversationHandler));
-router.get("/:id", expressWrapper(GetConversationHandler));
-router.get("/:id/messages", expressWrapper(GetMessagesHandler));
-router.post("/:id/messages", expressWrapper(CreateMessageHandler));
-// router.get("/:id/messages/:msgid", expressWrapper(GetMessageHandler));
+  constructor(private messageController: MessageController) {
+    this.router = Router();
+    this.routes();
+  }
 
-export default router;
+  public routes() {
+    this.router.get(
+      "/",
+      expressWrapper(this.messageController.GetConversationsHandler)
+    );
+    this.router.post(
+      "/",
+      expressWrapper(this.messageController.CreateConversationHandler)
+    );
+    this.router.get(
+      "/:id",
+      expressWrapper(this.messageController.GetConversationHandler)
+    );
+    this.router.get(
+      "/:id/messages",
+      expressWrapper(this.messageController.GetMessagesHandler)
+    );
+    this.router.post(
+      "/:id/messages",
+      expressWrapper(this.messageController.CreateMessageHandler)
+    );
+    // router.get("/:id/messages/:msgid", expressWrapper(GetMessageHandler));
+  }
+}

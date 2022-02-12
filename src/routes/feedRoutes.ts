@@ -1,10 +1,22 @@
 /* /api/feed */
 import { Router } from "express";
+import { Service } from "typedi";
 import { expressWrapper } from "../controller/expressHelper";
-import { GetHomeFeedHandler } from "../controller/FeedController";
+import { FeedController } from "../controller/FeedController";
 
-const router = Router();
+@Service()
+export class FeedRouter {
+  public router: Router;
 
-router.get("/", expressWrapper(GetHomeFeedHandler));
+  constructor(private feedController: FeedController) {
+    this.router = Router();
+    this.routes();
+  }
 
-export default router;
+  public routes() {
+    this.router.get(
+      "/",
+      expressWrapper(this.feedController.getHomeFeedHandler)
+    );
+  }
+}

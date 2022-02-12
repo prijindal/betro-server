@@ -1,8 +1,8 @@
 /* /api/follow */
 import { Router } from "express";
+import { Service } from "typedi";
 import {
-  ApproveUserHandler,
-  FollowUserHandler,
+  FollowActionController,
   FollowRequest,
   ApproveRequest,
   FollowResponse,
@@ -10,38 +10,62 @@ import {
 import FollowValidation from "../validation/FollowValidation";
 import { validateRequest } from "../middleware/validateRequest";
 import { expressWrapper } from "../controller/expressHelper";
-import { GetFollowersHandler } from "../controller/FollowController/followers";
-import { GetFolloweesHandler } from "../controller/FollowController/followees";
-import { GetApprovalsHandler } from "../controller/FollowController/approvals";
+import { FollowersController } from "../controller/FollowController/followers";
+import { FolloweesController } from "../controller/FollowController/followees";
+import { ApprovalsController } from "../controller/FollowController/approvals";
 
-const router = Router();
+@Service()
+export class FollowRouter {
+  public router: Router;
 
-router.get("/followers", expressWrapper(GetFollowersHandler));
-router.get("/followees", expressWrapper(GetFolloweesHandler));
-router.get("/approvals", expressWrapper(GetApprovalsHandler));
-router.post(
-  "/",
-  FollowValidation.follow(),
-  validateRequest,
-  expressWrapper<{}, FollowResponse, FollowRequest, {}>(FollowUserHandler)
-);
-// router.post(
-//   "/unfollow",
-//   FollowValidation.unfollow(),
-//   unFollowUser
-// );
-router.post(
-  "/approve",
-  FollowValidation.approve(),
-  validateRequest,
-  expressWrapper<{}, { approved: boolean }, ApproveRequest, {}>(
-    ApproveUserHandler
-  )
-);
-// router.post(
-//   "/:id/unapprove",
-//   FollowValidation.unapprove(),
-//   unApproveUser
-// );
+  constructor(
+    private approvalsController: ApprovalsController,
+    private followersController: FollowersController,
+    private followeesController: FolloweesController,
+    private followActionController: FollowActionController
+  ) {
+    this.router = Router();
+    this.routes();
+  }
 
-export default router;
+  public routes() {
+    this.router.get(
+      "/followers",
+      expressWrapper(this.followersController.getFollowersHandler)
+    );
+    this.router.get(
+      "/followees",
+      expressWrapper(this.followeesController.getFolloweesHandler)
+    );
+    this.router.get(
+      "/approvals",
+      expressWrapper(this.approvalsController.getApprovalsHandler)
+    );
+    this.router.post(
+      "/",
+      FollowValidation.follow(),
+      validateRequest,
+      expressWrapper<{}, FollowResponse, FollowRequest, {}>(
+        this.followActionController.FollowUserHandler
+      )
+    );
+    // router.post(
+    //   "/unfollow",
+    //   FollowValidation.unfollow(),
+    //   unFollowUser
+    // );
+    this.router.post(
+      "/approve",
+      FollowValidation.approve(),
+      validateRequest,
+      expressWrapper<{}, { approved: boolean }, ApproveRequest, {}>(
+        this.followActionController.ApproveUserHandler
+      )
+    );
+    // router.post(
+    //   "/:id/unapprove",
+    //   FollowValidation.unapprove(),
+    //   unApproveUser
+    // );
+  }
+}

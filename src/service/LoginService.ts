@@ -1,12 +1,14 @@
-import { v4 as uuidv4 } from "uuid";
+import { throttle } from "throttle-debounce";
+import { Service } from "typedi";
+import { Repository } from "typeorm";
+import { InjectRepository } from "typeorm-typedi-extensions";
 import jsonwebtoken from "jsonwebtoken";
-import postgres from "../db/postgres";
 import redis from "../db/redis";
-import { SECRET } from "../config";
+import { SECRET, logger } from "../config";
 
-import { verifyServerHash, generateServerHash } from "../util/crypto";
+import { verifyServerHash } from "../util/crypto";
 import { isEmpty } from "lodash";
-import { UserPostgres } from "../interfaces/database";
+import { AccessToken } from "../entities";
 
 export type LoginBody = {
   email: string;
@@ -15,84 +17,64 @@ export type LoginBody = {
   device_display_name: string;
 };
 
-export const checkUserCredentials = async (
-  email: string,
-  password: string
-): Promise<
-  { isValid: false } | { isValid: true; user_id: string; sym_key_id: string }
-> => {
-  const queryResult = await postgres<UserPostgres>("users")
-    .where({ email })
-    .select("id", "master_hash", "sym_key_id");
-  if (queryResult.length == 0) {
-    return { isValid: false };
-  }
-  const server_hash = queryResult[0].master_hash;
-  if (!verifyServerHash(password, server_hash)) {
-    return { isValid: false };
-  }
-  return {
-    isValid: true,
-    user_id: queryResult[0].id,
-    sym_key_id: queryResult[0].sym_key_id,
+@Service()
+export class LoginService {
+  constructor(
+    @InjectRepository(AccessToken)
+    private readonly accessTokenRepository: Repository<AccessToken>
+  ) {}
+
+  userAccessedFn = async (access_token_id: string): Promise<void> => {
+    try {
+      await this.accessTokenRepository.update(
+        { id: access_token_id },
+        { accessed_at: new Date() }
+      );
+    } catch (e) {
+      logger.error(e);
+    }
   };
-};
 
-export const createAccessToken = async (
-  user_id: string,
-  device_id: string,
-  device_display_name?: string
-): Promise<{ access_token_id: string; access_token: string }> => {
-  const access_token = uuidv4();
-  const access_token_hash = generateServerHash(access_token);
-  const queryResult = await postgres("access_tokens")
-    .insert({ user_id, access_token_hash, device_id, device_display_name })
-    .returning("*");
-  if (queryResult.length == 0) {
-    throw new Error();
-  }
-  return {
-    access_token_id: queryResult[0].id,
-    access_token: access_token,
+  userAccessed = throttle(10 * 1000, this.userAccessedFn);
+
+  verifyAccessToken = async (
+    user_id: string,
+    access_token_id: string,
+    access_token: string
+  ): Promise<boolean> => {
+    const queryResult = await this.accessTokenRepository.findOne({
+      id: access_token_id,
+      user_id,
+    });
+    if (queryResult == null) {
+      return false;
+    }
+    if (!verifyServerHash(access_token, queryResult.access_token_hash)) {
+      return false;
+    }
+    return true;
   };
-};
 
-export const verifyAccessToken = async (
-  user_id: string,
-  access_token_id: string,
-  access_token: string
-): Promise<boolean> => {
-  const queryResult = await postgres("access_tokens")
-    .where({ id: access_token_id, user_id })
-    .select("access_token_hash");
-  if (queryResult.length == 0) {
-    return false;
-  }
-  if (!verifyServerHash(access_token, queryResult[0].access_token_hash)) {
-    return false;
-  }
-  return true;
-};
-
-export const parseJwt = async (
-  jwt: string
-): Promise<{ user_id: string; access_token_id: string }> => {
-  const redisKeyUserId = `jwt_${jwt}_user_id`;
-  const redisKeyTokenId = `jwt_${jwt}_token_id`;
-  const storedUserId = await redis.get(redisKeyUserId);
-  const storedTokenId = await redis.get(redisKeyTokenId);
-  if (!isEmpty(storedUserId) && !isEmpty(storedTokenId)) {
-    return { user_id: storedUserId, access_token_id: storedTokenId };
-  }
-  const { user_id, id, key } = jsonwebtoken.verify(jwt, SECRET) as Record<
-    string,
-    string
-  >;
-  const isVerified = await verifyAccessToken(user_id, id, key);
-  if (!isVerified) {
-    return { user_id: null, access_token_id: null };
-  }
-  redis.set(redisKeyUserId, user_id, "ex", 600);
-  redis.set(redisKeyTokenId, id, "ex", 600);
-  return { user_id, access_token_id: id };
-};
+  parseJwt = async (
+    jwt: string
+  ): Promise<{ user_id: string; access_token_id: string }> => {
+    const redisKeyUserId = `jwt_${jwt}_user_id`;
+    const redisKeyTokenId = `jwt_${jwt}_token_id`;
+    const storedUserId = await redis.get(redisKeyUserId);
+    const storedTokenId = await redis.get(redisKeyTokenId);
+    if (!isEmpty(storedUserId) && !isEmpty(storedTokenId)) {
+      return { user_id: storedUserId, access_token_id: storedTokenId };
+    }
+    const { user_id, id, key } = jsonwebtoken.verify(jwt, SECRET) as Record<
+      string,
+      string
+    >;
+    const isVerified = await this.verifyAccessToken(user_id, id, key);
+    if (!isVerified) {
+      return { user_id: null, access_token_id: null };
+    }
+    redis.set(redisKeyUserId, user_id, "ex", 600);
+    redis.set(redisKeyTokenId, id, "ex", 600);
+    return { user_id, access_token_id: id };
+  };
+}

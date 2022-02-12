@@ -1,40 +1,44 @@
 /* /api/post */
 import { Router } from "express";
-import {
-  CreatePostHandler,
-  GetPostHandler,
-  LikePostHandler,
-  UnLikePostHandler,
-} from "../controller/PostController";
+import { Service } from "typedi";
+import { PostController } from "../controller/PostController";
 import PostValidation from "../validation/PostValidation";
 import { validateRequest } from "../middleware/validateRequest";
 import { expressWrapper } from "../controller/expressHelper";
 
-const router = Router();
+@Service()
+export class PostRouter {
+  public router: Router;
 
-router.post(
-  "/",
-  PostValidation.create(),
-  validateRequest,
-  expressWrapper(CreatePostHandler)
-);
-router.get(
-  "/:id",
-  PostValidation.post(),
-  validateRequest,
-  expressWrapper(GetPostHandler)
-);
-router.post(
-  "/:id/like",
-  PostValidation.post(),
-  validateRequest,
-  expressWrapper(LikePostHandler)
-);
-router.post(
-  "/:id/unlike",
-  PostValidation.post(),
-  validateRequest,
-  expressWrapper(UnLikePostHandler)
-);
+  constructor(private postController: PostController) {
+    this.router = Router();
+    this.routes();
+  }
 
-export default router;
+  public routes() {
+    this.router.post(
+      "/",
+      PostValidation.create(),
+      validateRequest,
+      expressWrapper(this.postController.createPostHandler)
+    );
+    this.router.get(
+      "/:id",
+      PostValidation.post(),
+      validateRequest,
+      expressWrapper(this.postController.getPostHandler)
+    );
+    this.router.post(
+      "/:id/like",
+      PostValidation.post(),
+      validateRequest,
+      expressWrapper(this.postController.likePostHandler)
+    );
+    this.router.post(
+      "/:id/unlike",
+      PostValidation.post(),
+      validateRequest,
+      expressWrapper(this.postController.unLikePostHandler)
+    );
+  }
+}

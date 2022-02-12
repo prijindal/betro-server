@@ -1,33 +1,42 @@
 /* /api/user */
 import { Router } from "express";
-import {
-  UserProfileHandler,
-  SearchUserHandler,
-} from "../controller/UserController";
+import { UserController } from "../controller/UserController";
 import UserValidation from "../validation/UserValidation";
 import { validateRequest } from "../middleware/validateRequest";
 import { expressWrapper } from "../controller/expressHelper";
-import { GetUserPostsHandler } from "../controller/FeedController";
+import { FeedController } from "../controller/FeedController";
+import { Service } from "typedi";
 
-const router = Router();
+@Service()
+export class UserRouter {
+  public router: Router;
 
-router.get(
-  "/search",
-  UserValidation.search(),
-  validateRequest,
-  expressWrapper(SearchUserHandler)
-);
-router.get(
-  "/:username",
-  UserValidation.profile(),
-  validateRequest,
-  expressWrapper(UserProfileHandler)
-);
-router.get(
-  "/:username/posts",
-  UserValidation.posts(),
-  validateRequest,
-  expressWrapper(GetUserPostsHandler)
-);
+  constructor(
+    private feedController: FeedController,
+    private userController: UserController
+  ) {
+    this.router = Router();
+    this.routes();
+  }
 
-export default router;
+  public routes() {
+    this.router.get(
+      "/search",
+      UserValidation.search(),
+      validateRequest,
+      expressWrapper(this.userController.searchUserHandler)
+    );
+    this.router.get(
+      "/:username",
+      UserValidation.profile(),
+      validateRequest,
+      expressWrapper(this.userController.userProfileHandler)
+    );
+    this.router.get(
+      "/:username/posts",
+      UserValidation.posts(),
+      validateRequest,
+      expressWrapper(this.feedController.getUserPostsHandler)
+    );
+  }
+}

@@ -1,3 +1,4 @@
+import "reflect-metadata";
 import fs from "fs";
 import pino from "pino";
 import dotenv from "dotenv";
