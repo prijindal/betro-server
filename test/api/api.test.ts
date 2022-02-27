@@ -1,4 +1,4 @@
-import "betro-js-lib/dist/setupNodePollyfill";
+import "@betro/lib/dist/setupNodePollyfill";
 import { random } from "lodash";
 import { getConnection } from "typeorm";
 import { User } from "../../src/entities";

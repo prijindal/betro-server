@@ -1,4 +1,4 @@
-import { UserSettingsType } from "betro-js-client";
+import { UserSettingsType } from "@betro/client";
 import { GeneratedUser, generateUsers } from "./generateUsers";
 
 export const runTests = (port: string): void => {

@@ -1,6 +1,6 @@
 import { includes } from "lodash";
 import faker from "faker";
-import BetroApi, { GroupResponse } from "betro-js-client";
+import BetroApi, { GroupResponse } from "@betro/client";
 
 export interface GeneratedUser {
   credentials: {
