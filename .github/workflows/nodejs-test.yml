@@ -67,3 +67,11 @@ jobs:
         env_vars: NODE_VERSION
       env:
         NODE_VERSION: ${{ matrix.node-version }}
+    - name: Build
+      if: startsWith(matrix.node-version, '16')
+      run: npm run build && npm run pkg:server && npm run pkg:migrate
+    - uses: actions/upload-artifact@v2
+      if: startsWith(matrix.node-version, '16')
+      with:
+        name: Release
+        path: dist/linux-x64/

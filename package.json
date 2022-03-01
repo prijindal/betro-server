@@ -6,11 +6,10 @@
   "scripts": {
     "build": "npm run build-ts && npm run lint",
     "build-ts": "tsc",
-    "build:docker": "npm run pkg:server && npm run pkg:clean && npm run pkg:migration && docker build -t betro/server .",
+    "build:docker": "npm run pkg:server && npm run pkg:migrate && docker build -t betro/server .",
     "docker:publish": "docker push betro/server:latest",
     "pkg:server": "pkg -t node14-linux-x64 --out-path dist/linux-x64 dist/server.js",
-    "pkg:clean": "pkg -t node14-linux-x64 --out-path dist/linux-x64/clean dist/scripts/clean.js",
-    "pkg:migration": "pkg -t node14-linux-x64 --out-path dist/linux-x64/migration dist/scripts/migration.js",
+    "pkg:migrate": "pkg -t node14-linux-x64 --out-path dist/linux-x64/migrate dist/migrate.js",
     "migrate": "ts-node src/migrate",
     "lint": "eslint \"**/*.{js,ts}\" --quiet --fix",
     "prettier": "prettier src test --write",
