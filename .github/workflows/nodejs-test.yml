@@ -67,9 +67,12 @@ jobs:
         env_vars: NODE_VERSION
       env:
         NODE_VERSION: ${{ matrix.node-version }}
-    - name: Build
+    - name: Build pkg
       if: startsWith(matrix.node-version, '16')
-      run: npm run build && npm run pkg:server && npm run pkg:migrate
+      run: npm install -g pkg && npm run build && npm run pkg:server && npm run pkg:migrate
+    # - name: Build docker
+    #   if: startsWith(matrix.node-version, '16')
+    #   run: docker build -t betro/server .
     - uses: actions/upload-artifact@v2
       if: startsWith(matrix.node-version, '16')
       with:
