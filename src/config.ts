@@ -24,7 +24,12 @@ export const ENABLE_RATE_LIMIT =
   process.env["ENABLE_RATE_LIMIT"] == "true" || false;
 export const logger = pino({
   level: LOGGER_LEVEL,
-  prettyPrint: ENVIRONMENT == "development",
+  transport:
+    ENVIRONMENT == "development"
+      ? {
+          target: "pino-pretty",
+        }
+      : null,
 });
 
 if (!POSTGRES_URI) {
