@@ -7,7 +7,8 @@ import { errorResponse } from "../util/responseHandler";
 
 export const userRateLimiter = rateLimit({
   store: new RedisStore({
-    client: redis,
+    // @ts-expect-error - Known issue: the `call` function is not present in @types/ioredis
+    sendCommand: (...args) => redis.call(...args),
     prefix: "user_limiter_",
   }),
   windowMs: 5 * 60 * 1000,
@@ -20,7 +21,8 @@ export const userRateLimiter = rateLimit({
 
 export const loginRateLimiter = rateLimit({
   store: new RedisStore({
-    client: redis,
+    // @ts-expect-error - Known issue: the `call` function is not present in @types/ioredis
+    sendCommand: (...args) => redis.call(...args),
     prefix: "login_limiter_",
   }),
   windowMs: 5 * 60 * 1000,
